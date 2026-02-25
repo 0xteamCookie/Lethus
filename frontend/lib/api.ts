@@ -39,6 +39,7 @@ export interface Turn {
   role: "user" | "assistant" | "system";
   content: string;
   tokenCount: number;
+  metadata?: LethusMetadata | null;
   createdAt: string;
 }
 
@@ -61,7 +62,7 @@ export interface LethusMetadata {
   retrieved_tokens: number;
   reduction_percent: number;
   intent: string;
-  spans_selected: number;
+  spans_selected: Array<{ start: number; end: number }>;
   changelog_entries_used: number;
   processing_ms: number;
 }

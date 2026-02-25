@@ -68,7 +68,11 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
       setMessages(
         turns
           .filter((t: Turn) => t.role === "user" || t.role === "assistant")
-          .map((t: Turn) => ({ role: t.role as "user" | "assistant", content: t.content })),
+          .map((t: Turn) => ({ 
+            role: t.role as "user" | "assistant", 
+            content: t.content,
+            metadata: t.metadata || undefined,
+          })),
       );
     } catch {
       setMessages([]);
