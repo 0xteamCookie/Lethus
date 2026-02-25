@@ -6,6 +6,7 @@ import {
   StepsSlide,
   ComparisonSlide,
   ImpactSlide,
+  OurSolutionSlide,
   slides,
 } from "@/component/present";
 
@@ -96,6 +97,7 @@ export default function Present() {
             {slide.content.type === "steps" && <StepsSlide content={slide.content} />}
             {slide.content.type === "comparison" && <ComparisonSlide content={slide.content} />}
             {slide.content.type === "impact" && <ImpactSlide content={slide.content} />}
+            {slide.content.type === "solution" && <OurSolutionSlide />}
           </div>
         </main>
 
@@ -131,8 +133,8 @@ export default function Present() {
           onClick={prev}
           disabled={current === 0}
           className={`px-5 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 ${current === 0
-              ? "border-gray-100 text-gray-300 cursor-not-allowed"
-              : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 cursor-pointer"
+            ? "border-gray-100 text-gray-300 cursor-not-allowed"
+            : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 cursor-pointer"
             }`}
         >
           ← Previous
@@ -160,8 +162,8 @@ export default function Present() {
           onClick={next}
           disabled={current === slides.length - 1}
           className={`px-5 py-2.5 rounded-lg text-sm font-semibold border transition-all duration-200 ${current === slides.length - 1
-              ? "border-gray-100 text-gray-300 cursor-not-allowed"
-              : "bg-violet-600 border-violet-600 text-white hover:bg-violet-700 cursor-pointer shadow-sm"
+            ? "border-gray-100 text-gray-300 cursor-not-allowed"
+            : "bg-violet-600 border-violet-600 text-white hover:bg-violet-700 cursor-pointer shadow-sm"
             }`}
         >
           Next →

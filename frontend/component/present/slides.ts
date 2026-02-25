@@ -96,4 +96,13 @@ export const slides = [
             vision: "Lethus is the memory protocol for LLMs. Stop resending the past. Send only what matters.",
         },
     },
+    {
+        id: 6,
+        tag: "OUR SOLUTION",
+        title: "Live State Tracking in Action",
+        hook: "Watch how Lethus builds a structured state document from a 20-turn conversation — in real time.",
+        content: {
+            type: "solution",
+        },
+    },
 ];
