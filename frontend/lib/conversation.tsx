@@ -87,7 +87,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
       // Optimistically add user message and an empty assistant message to stream into.
       let assistantIndex = -1;
       setMessages((prev) => {
-        const next = [...prev, { role: "user", content: text }, { role: "assistant", content: "" }];
+        const next: Message[] = [...prev, { role: "user" as const, content: text }, { role: "assistant" as const, content: "" }];
         assistantIndex = next.length - 1;
         return next;
       });
