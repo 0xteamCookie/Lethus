@@ -46,9 +46,9 @@ export interface ChangelogEntry {
   id: string;
   conversationId: string;
   turnNumber: number;
-  tag: string;
-  text: string;
-  supersededBy: string | null;
+  category: string;
+  content: string;
+  supersededBy: number | null;
 }
 
 export interface StateDoc {

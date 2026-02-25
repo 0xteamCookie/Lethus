@@ -73,7 +73,7 @@ export default function ChangeLogSection({ open, onToggle, conversationId }: Pro
                                 {conversationId ? "No changelog entries yet" : "Select a conversation"}
                             </p>
                         ) : entries.map((entry, i) => {
-                            const config = tagConfig[entry.tag.toUpperCase() as ChangeLogTag] ?? defaultTag;
+                            const config = tagConfig[(entry.category ?? "").toUpperCase() as ChangeLogTag] ?? defaultTag;
                             return (
                                 <div
                                     key={entry.id}
@@ -95,7 +95,7 @@ export default function ChangeLogSection({ open, onToggle, conversationId }: Pro
                                             </span>
                                         </div>
                                         <span className="text-[12px] text-text-secondary leading-snug">
-                                            {entry.text}
+                                            {entry.content}
                                         </span>
                                     </div>
                                 </div>
