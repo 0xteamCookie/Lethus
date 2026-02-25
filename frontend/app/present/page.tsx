@@ -7,6 +7,7 @@ import {
   ComparisonSlide,
   ImpactSlide,
   OurSolutionSlide,
+  IntentSlide,
 } from "@/component/present";
 
 const slides = [
@@ -15,7 +16,8 @@ const slides = [
   { tag: "ALGORITHM", title: "The Algorithmic Engine", hook: "Turning Context into an Optimization Problem" },
   { tag: "DIFFERENTIATION", title: "Why This Is Different", hook: "Not RAG. Not Summarization. Not Prompt Compression." },
   { tag: "IMPACT & VISION", title: "Pay for Signal, Not Tokens", hook: "" },
-  { tag: "OUR SOLUTION", title: "Live State Tracking in Action", hook: "Watch how Lethus builds a structured state document from a 20-turn conversation — in real time." },
+  { tag: "OUR SOLUTION", title: "Live State Tracking in Action", hook: "Watch how Lethus builds a structured state document from a 20-turn conversation, in real time." },
+  { tag: "INTENT", title: "Smart Intent Classification", hook: "Different messages need different retrieval strategies. Lethus classifies intent first, then fetches only what is needed." },
 ];
 
 export default function Present() {
@@ -106,6 +108,7 @@ export default function Present() {
             {current === 3 && <ComparisonSlide />}
             {current === 4 && <ImpactSlide />}
             {current === 5 && <OurSolutionSlide />}
+            {current === 6 && <IntentSlide />}
           </div>
         </main>
 
