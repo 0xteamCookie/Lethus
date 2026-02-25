@@ -2,25 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-const chatHistory = [
-    "What's something you've learned recently?",
-    "If you could teleport anywhere...",
-    "What's one goal you want to achieve?",
-    "Ask me anything weird or random...",
-    "How are you feeling today, really?",
-    "What's one habit you wish you had?",
-    "Help me brainstorm project ideas",
-    "Explain quantum computing simply",
-];
+import { useRouter, useParams } from "next/navigation";
+import { useConversation } from "@/lib/conversation";
 
 export default function SideNavbar() {
     const [collapsed, setCollapsed] = useState(false);
     const [search, setSearch] = useState("");
+    const router = useRouter();
+    const params = useParams<{ id?: string }>();
+    const { conversations, clearCurrent } = useConversation();
 
-    const filtered = chatHistory.filter((c) =>
-        c.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = conversations.filter((c) => {
+        const text = c.lastMessage ?? "";
+        return text.toLowerCase().includes(search.toLowerCase());
+    });
+
+    const handleNewChat = () => {
+        clearCurrent();
+        router.push("/chat");
+    };
 
     return (
         <>
@@ -62,13 +62,20 @@ export default function SideNavbar() {
                 <div className="overflow-hidden flex flex-col h-full">
                     <div className="px-4 pt-5 pb-3">
                         <div className="flex items-center gap-2.5 mb-5">
-                            <img src="https://placehold.co/400" alt="Lethus Logo" className="w-7 h-7 rounded-lg object-cover" />
+                            <div className="w-7 h-7 rounded-lg bg-brand-purple flex items-center justify-center">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2L13.09 8.26L18 6L14.74 10.91L21 12L14.74 13.09L18 18L13.09 15.74L12 22L10.91 15.74L6 18L9.26 13.09L3 12L9.26 10.91L6 6L10.91 8.26L12 2Z" fill="white" />
+                                </svg>
+                            </div>
                             <span className="text-[15px] font-semibold text-text-primary font-primary tracking-[-0.01em]">
                                 Lethus
                             </span>
                         </div>
 
-                        <button className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-page-bg text-text-primary font-primary text-[13px] font-medium border border-border cursor-pointer transition-all duration-200 hover:border-brand-purple/30 hover:text-brand-purple mb-4">
+                        <button
+                            onClick={handleNewChat}
+                            className="group w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-page-bg text-text-primary font-primary text-[13px] font-medium border border-border cursor-pointer transition-all duration-200 hover:border-brand-purple/30 hover:text-brand-purple mb-4"
+                        >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19" />
                                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -98,16 +105,29 @@ export default function SideNavbar() {
                             Recent
                         </p>
                         <div className="flex flex-col gap-0.5">
-                            {filtered.map((chat, i) => (
+                            {filtered.length === 0 && (
+                                <p className="px-3 text-[12px] text-text-tertiary italic">
+                                    {conversations.length === 0
+                                        ? "No conversations yet"
+                                        : "No matches"}
+                                </p>
+                            )}
+                            {filtered.map((conv) => (
                                 <Link
-                                    key={i}
-                                    href={`/chat/${i + 1}`}
-                                    className="group flex items-center gap-2.5 px-3 py-2 rounded-lg text-text-secondary font-primary text-[13px] no-underline transition-all duration-150 hover:bg-page-bg hover:text-text-primary"
+                                    key={conv.id}
+                                    href={`/chat/${conv.id}`}
+                                    className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg font-primary text-[13px] no-underline transition-all duration-150 hover:bg-page-bg hover:text-text-primary ${
+                                        params.id === conv.id
+                                            ? "bg-page-bg text-text-primary"
+                                            : "text-text-secondary"
+                                    }`}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 opacity-40 group-hover:opacity-70 transition-opacity">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                     </svg>
-                                    <span className="truncate">{chat}</span>
+                                    <span className="truncate">
+                                        {conv.lastMessage ?? `Chat (${conv.turnCount} turns)`}
+                                    </span>
                                 </Link>
                             ))}
                         </div>

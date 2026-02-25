@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 
+interface ChatInputProps {
+    onSend?: (message: string) => void;
+    disabled?: boolean;
+}
+
 const suggestions = [
     { label: "Write code", icon: "code" },
     { label: "Analyze data", icon: "chart" },
@@ -40,8 +45,27 @@ const iconMap: Record<string, React.ReactNode> = {
     ),
 };
 
-export default function ChatInput() {
+export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     const [query, setQuery] = useState("");
+
+    const handleSend = () => {
+        const text = query.trim();
+        if (!text || disabled) return;
+        onSend?.(text);
+        setQuery("");
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    const handleSuggestion = (label: string) => {
+        if (disabled) return;
+        onSend?.(label);
+    };
 
     return (
         <div className="w-full max-w-[640px]">
@@ -56,11 +80,15 @@ export default function ChatInput() {
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Ask anything..."
-                        className="flex-1 border-none outline-none font-primary text-[14px] font-normal text-text-primary bg-transparent placeholder:text-text-tertiary"
+                        disabled={disabled}
+                        className="flex-1 border-none outline-none font-primary text-[14px] font-normal text-text-primary bg-transparent placeholder:text-text-tertiary disabled:opacity-50"
                     />
                     <button
-                        className="w-8 h-8 rounded-lg bg-brand-purple border-none cursor-pointer flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-brand-purple-hover"
+                        onClick={handleSend}
+                        disabled={disabled || !query.trim()}
+                        className="w-8 h-8 rounded-lg bg-brand-purple border-none cursor-pointer flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-brand-purple-hover disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Send message"
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -73,6 +101,8 @@ export default function ChatInput() {
                     {suggestions.map(({ label, icon }) => (
                         <button
                             key={label}
+                            onClick={() => handleSuggestion(label)}
+                            disabled={disabled}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-page-bg text-text-secondary font-primary text-[12px] font-medium border border-border-subtle cursor-pointer whitespace-nowrap transition-all duration-150 hover:bg-brand-purple-light hover:text-brand-purple hover:border-brand-purple/15"
                         >
                             {iconMap[icon]}

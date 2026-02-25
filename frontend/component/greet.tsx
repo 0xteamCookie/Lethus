@@ -1,5 +1,12 @@
 "use client";
 
+function getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+}
+
 export default function Greet() {
     return (
         <div className="flex flex-col items-center gap-5">
@@ -23,7 +30,7 @@ export default function Greet() {
             </div>
             <div className="flex flex-col items-center gap-2">
                 <h1 className="font-primary text-[32px] font-bold text-text-primary text-center leading-tight tracking-[-0.02em]">
-                    Good Morning, Judha
+                    {getGreeting()}
                 </h1>
                 <p className="font-primary text-[18px] font-normal text-text-secondary text-center leading-relaxed">
                     How can I{" "}

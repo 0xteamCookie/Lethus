@@ -1,29 +1,9 @@
 "use client";
 
-type ChangeLogTag = "CONTEXT" | "DECISION" | "UPDATE" | "ISSUE" | "RESOLUTION";
+import { useState, useEffect } from "react";
+import { getChangelog, type ChangelogEntry } from "@/lib/api";
 
-const changeLog: { id: string; tag: ChangeLogTag; text: string }[] = [
-    { id: "T1", tag: "CONTEXT", text: "Building e-commerce backend" },
-    { id: "T2", tag: "DECISION", text: "Node + Express as runtime" },
-    { id: "T3", tag: "DECISION", text: "PostgreSQL as database" },
-    { id: "T4", tag: "DECISION", text: "Stripe for payments" },
-    { id: "T5", tag: "UPDATE", text: "Switched PostgreSQL → MongoDB (flexible data)" },
-    { id: "T6", tag: "CONTEXT", text: "Setting up user authentication" },
-    { id: "T7", tag: "DECISION", text: "JWT tokens for auth" },
-    { id: "T8", tag: "CONTEXT", text: "Added orders collection to MongoDB" },
-    { id: "T9", tag: "ISSUE", text: "Orders endpoint throwing 500 error" },
-    { id: "T10", tag: "RESOLUTION", text: "Fixed 500 error, missing await" },
-    { id: "T11", tag: "CONTEXT", text: "Adding product search" },
-    { id: "T12", tag: "ISSUE", text: "Search too slow on large datasets" },
-    { id: "T13", tag: "DECISION", text: "Added index on product name field" },
-    { id: "T14", tag: "UPDATE", text: "Switched Stripe → PayPal (too many fees)" },
-    { id: "T15", tag: "CONTEXT", text: "PayPal sandbox configured" },
-    { id: "T16", tag: "CONTEXT", text: "Adding order status tracking" },
-    { id: "T17", tag: "DECISION", text: "Order statuses: pending, processing, shipped, delivered" },
-    { id: "T18", tag: "ISSUE", text: "Search still slow on 100k products despite index" },
-    { id: "T19", tag: "CONTEXT", text: "Considering Redis for search caching" },
-    { id: "T20", tag: "DECISION", text: "Adding Redis for caching" },
-];
+type ChangeLogTag = "CONTEXT" | "DECISION" | "UPDATE" | "ISSUE" | "RESOLUTION";
 
 const tagConfig: Record<ChangeLogTag, { bg: string; text: string; dot: string; label: string }> = {
     CONTEXT: { bg: "bg-gray-50", text: "text-gray-500", dot: "bg-gray-300", label: "CTX" },
@@ -33,12 +13,27 @@ const tagConfig: Record<ChangeLogTag, { bg: string; text: string; dot: string; l
     RESOLUTION: { bg: "bg-gray-50", text: "text-gray-500", dot: "bg-gray-300", label: "RES" },
 };
 
+const defaultTag = { bg: "bg-gray-50", text: "text-gray-500", dot: "bg-gray-300", label: "---" };
+
 interface Props {
     open: boolean;
     onToggle: () => void;
+    conversationId: string | null;
 }
 
-export default function ChangeLogSection({ open, onToggle }: Props) {
+export default function ChangeLogSection({ open, onToggle, conversationId }: Props) {
+    const [entries, setEntries] = useState<ChangelogEntry[]>([]);
+
+    useEffect(() => {
+        if (!conversationId) {
+            setEntries([]);
+            return;
+        }
+        getChangelog(conversationId)
+            .then(setEntries)
+            .catch(() => setEntries([]));
+    }, [conversationId]);
+
     return (
         <div className="rounded-xl border border-border overflow-hidden">
             <button
@@ -52,7 +47,7 @@ export default function ChangeLogSection({ open, onToggle }: Props) {
                     </svg>
                     Change Log
                     <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-surface-white border border-border text-[10px] font-medium text-text-tertiary">
-                        {changeLog.length}
+                        {entries.length}
                     </span>
                 </div>
                 <svg
@@ -73,23 +68,27 @@ export default function ChangeLogSection({ open, onToggle }: Props) {
             <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-[500px]" : "max-h-0"}`}>
                 <div className="overflow-y-auto max-h-[440px] bg-surface-white border-t border-border-subtle [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div className="flex flex-col">
-                        {changeLog.map((entry, i) => {
-                            const config = tagConfig[entry.tag];
+                        {entries.length === 0 ? (
+                            <p className="text-[12px] text-text-tertiary italic py-4 text-center">
+                                {conversationId ? "No changelog entries yet" : "Select a conversation"}
+                            </p>
+                        ) : entries.map((entry, i) => {
+                            const config = tagConfig[entry.tag.toUpperCase() as ChangeLogTag] ?? defaultTag;
                             return (
                                 <div
                                     key={entry.id}
-                                    className={`flex items-start gap-2.5 px-3.5 py-2 transition-colors duration-100 hover:bg-page-bg ${i !== changeLog.length - 1 ? "border-b border-border-subtle" : ""}`}
+                                    className={`flex items-start gap-2.5 px-3.5 py-2 transition-colors duration-100 hover:bg-page-bg ${i !== entries.length - 1 ? "border-b border-border-subtle" : ""}`}
                                 >
                                     <div className="flex flex-col items-center gap-1 pt-0.5 shrink-0">
                                         <div className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-                                        {i !== changeLog.length - 1 && (
+                                        {i !== entries.length - 1 && (
                                             <div className="w-px flex-1 min-h-[12px] bg-border-subtle" />
                                         )}
                                     </div>
                                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-mono font-semibold text-text-tertiary">
-                                                {entry.id}
+                                                T{entry.turnNumber}
                                             </span>
                                             <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${config.bg} ${config.text}`}>
                                                 {config.label}
