@@ -68,7 +68,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     };
 
     return (
-        <div className="w-full max-w-[640px]">
+        <div className="w-full max-w-160">
             <div className="bg-surface-white rounded-2xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.04),0_6px_24px_rgba(0,0,0,0.03)] p-4 flex flex-col gap-3 transition-shadow duration-300 focus-within:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_6px_24px_rgba(92,53,230,0.08)]">
                 <div className="flex items-center gap-3 w-full">
                     <div className="w-7 h-7 rounded-lg bg-brand-purple-light flex items-center justify-center shrink-0">

@@ -135,7 +135,7 @@ export default function StateLogSection({ open, onToggle, conversationId }: Prop
                 </svg>
             </button>
 
-            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-[800px]" : "max-h-0"}`}>
+            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-200" : "max-h-0"}`}>
                 <div className="px-3 pb-3 flex flex-col gap-2.5 bg-surface-white border-t border-border-subtle">
                     {stateLog.length === 0 ? (
                         <p className="text-[12px] text-text-tertiary italic py-3 text-center">
@@ -150,7 +150,7 @@ export default function StateLogSection({ open, onToggle, conversationId }: Prop
                             <div className="flex flex-col gap-px ml-0.5">
                                 {section.items.map((item, i) => (
                                     <div key={i} className="flex items-start gap-2 py-0.5 px-2">
-                                        <span className="w-1 h-1 rounded-full bg-text-tertiary shrink-0 mt-[6px]" />
+                                        <span className="w-1 h-1 rounded-full bg-text-tertiary shrink-0 mt-1.5" />
                                         <span className="text-[12px] text-text-secondary leading-relaxed">
                                             {item}
                                         </span>

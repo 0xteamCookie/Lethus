@@ -31,7 +31,7 @@ export default function MessageList({ messages, loading, sending }: Props) {
   if (messages.length === 0) return null;
 
   return (
-    <div className="flex-1 w-full max-w-[720px] overflow-y-auto px-4 py-6 flex flex-col gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="flex-1 w-full max-w-180 overflow-y-auto px-4 py-6 flex flex-col gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {messages.map((msg, i) => (
         <div
           key={i}

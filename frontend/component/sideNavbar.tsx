@@ -35,7 +35,7 @@ export default function SideNavbar() {
                 onClick={() => setCollapsed(!collapsed)}
                 className={`fixed top-5 z-50 w-8 h-8 rounded-lg border border-border flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-surface-white ${collapsed
                         ? "left-5 bg-page-bg"
-                        : "left-[268px] bg-surface-white"
+                        : "left-67 bg-surface-white"
                     }`}
                 aria-label="Toggle Sidebar"
             >

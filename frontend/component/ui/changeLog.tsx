@@ -46,7 +46,7 @@ export default function ChangeLogSection({ open, onToggle, conversationId }: Pro
                         <circle cx="12" cy="12" r="10" />
                     </svg>
                     Change Log
-                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-surface-white border border-border text-[10px] font-medium text-text-tertiary">
+                    <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-surface-white border border-border text-[10px] font-medium text-text-tertiary">
                         {entries.length}
                     </span>
                 </div>
@@ -65,8 +65,8 @@ export default function ChangeLogSection({ open, onToggle, conversationId }: Pro
                 </svg>
             </button>
 
-            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-[500px]" : "max-h-0"}`}>
-                <div className="overflow-y-auto max-h-[440px] bg-surface-white border-t border-border-subtle [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-125" : "max-h-0"}`}>
+                <div className="overflow-y-auto max-h-110 bg-surface-white border-t border-border-subtle [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div className="flex flex-col">
                         {entries.length === 0 ? (
                             <p className="text-[12px] text-text-tertiary italic py-4 text-center">
@@ -82,7 +82,7 @@ export default function ChangeLogSection({ open, onToggle, conversationId }: Pro
                                     <div className="flex flex-col items-center gap-1 pt-0.5 shrink-0">
                                         <div className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
                                         {i !== entries.length - 1 && (
-                                            <div className="w-px flex-1 min-h-[12px] bg-border-subtle" />
+                                            <div className="w-px flex-1 min-h-3 bg-border-subtle" />
                                         )}
                                     </div>
                                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
