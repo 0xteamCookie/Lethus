@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 
+/* Base conversation — always visible in Full History mode */
 const convo = [
     { id: "T1", role: "user", text: "Build a REST API with Node.js and Express" },
     { id: "T2", role: "ai", text: "Setting up Express + TypeScript project..." },
@@ -15,9 +16,23 @@ const convo = [
     { id: "T10", role: "ai", text: "Added text index on name + description" },
 ];
 
-const tokensEach = [28, 32, 24, 36, 48, 42, 38, 32, 36, 44];
-const cumTokens = tokensEach.reduce<number[]>((a, t) => { a.push((a.at(-1) ?? 0) + t); return a; }, []);
-const obsolete = new Set([2, 3]); // T3, T4 become obsolete after MongoDB switch
+/* New requests that arrive on Play — each triggers resending the ENTIRE history */
+const newRequests = [
+    { id: "T11", role: "user", text: "Add user authentication with JWT" },
+    { id: "T12", role: "ai", text: "Added JWT auth middleware and login route" },
+
+];
+
+const baseTokens = 360; // tokens for T1-T10
+const newTokensEach = [38, 36, 34, 40, 42]; // tokens per new message
+/* Cumulative tokens: base conversation + all new messages up to step */
+const historyTokens = newTokensEach.reduce<number[]>((a, t) => {
+    a.push((a.at(-1) ?? baseTokens) + t);
+    return a;
+}, []);
+// e.g. step 1 → 360+38=398, step 2 → 434, ..., step 5 → 550
+
+const obsolete = new Set([2, 3]); // T3, T4 obsolete after MongoDB switch
 const ragScores = [0.12, 0.08, 0.72, 0.45, 0.94, 0.81, 0.05, 0.04, 0.11, 0.09];
 const ragHits = new Set([2, 4, 5]); // T3, T5, T6
 
@@ -31,24 +46,31 @@ const modes: { key: Mode; label: string; icon: string }[] = [
 
 /* ─── tiny sub-components ─── */
 
-function Msg({ i, isNew, dim, hl, strike, score }: {
-    i: number; isNew?: boolean; dim?: boolean; hl?: boolean; strike?: boolean; score?: number;
-}) {
+function Msg({ i, score }: { i: number; score?: number }) {
     const m = convo[i];
+    const isUser = m.role === "user";
     return (
-        <div
-            className={`flex items-start gap-2 transition-all duration-300
-        ${dim ? "opacity-25" : ""} ${strike ? "line-through opacity-40" : ""}
-        ${hl ? "bg-indigo-50 -mx-2 px-2 py-1 rounded-lg border border-indigo-100" : ""}`}
-            style={{ animation: isNew ? "fadeSlideIn 0.3s ease-out" : undefined }}
-        >
-            <span className="text-[11px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">{m.id}</span>
-            <span className={`text-[13px] font-semibold shrink-0 ${m.role === "user" ? "text-indigo-500" : "text-emerald-500"}`}>
-                {m.role === "user" ? "User:" : "AI:"}
-            </span>
-            <span className="text-[14px] text-gray-600 leading-snug flex-1">{m.text}</span>
+        <div className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+            {/* Avatar */}
+            <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 ${isUser ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"
+                }`}>
+                {isUser ? "U" : "✦"}
+            </div>
+            {/* Bubble */}
+            <div className={`flex flex-col gap-0.5 min-w-0 ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: "85%" }}>
+                <span className={`text-[11px] font-semibold ${isUser ? "text-indigo-500" : "text-emerald-500"}`}>
+                    {isUser ? "You" : "Assistant"}
+                </span>
+                <div className={`text-[13px] leading-relaxed px-3 py-2 rounded-xl ${isUser
+                    ? "bg-indigo-50 text-gray-700 rounded-tr-sm"
+                    : "bg-gray-50 text-gray-700 rounded-tl-sm border border-gray-100"
+                    }`}>
+                    {m.text}
+                </div>
+            </div>
             {score !== undefined && (
-                <span className={`text-[9px] font-mono shrink-0 px-1 py-0.5 rounded ${score >= 0.6 ? "bg-indigo-100 text-indigo-700 font-bold" : "bg-gray-50 text-gray-300"}`}>
+                <span className={`text-[9px] font-mono shrink-0 px-1.5 py-0.5 rounded self-center ${score >= 0.6 ? "bg-indigo-100 text-indigo-700 font-bold" : "bg-gray-50 text-gray-300"
+                    }`}>
                     {score.toFixed(2)}
                 </span>
             )}
@@ -113,8 +135,8 @@ const ProblemSlide = () => {
     const leftRef = useRef<HTMLDivElement>(null);
     const rightRef = useRef<HTMLDivElement>(null);
 
-    const max = mode === "history" ? 10 : 5;
-    const spd = mode === "history" ? 700 : 1100;
+    const max = mode === "history" ? newRequests.length : 5;
+    const spd = mode === "history" ? 900 : 1100;
 
     const play = () => { if (step >= max) setStep(0); setPlaying(true); };
     const pause = () => { setPlaying(false); if (timer.current) clearInterval(timer.current); };
@@ -135,11 +157,11 @@ const ProblemSlide = () => {
     }, [step]);
 
     /* token badge color */
-    const tc = (n: number) => n > 280 ? "red" : n > 150 ? "amber" : "green";
+    const tc = (n: number) => n > 480 ? "red" : n > 400 ? "amber" : "green";
 
     /* ── right-panel per mode ── */
     const rightBadge = (): { text: string; color: string } | undefined => {
-        if (mode === "history" && step > 0) return { text: `${cumTokens[step - 1]} tokens`, color: tc(cumTokens[step - 1]) };
+        if (mode === "history" && step > 0) return { text: `${historyTokens[step - 1]} tokens`, color: tc(historyTokens[step - 1]) };
         if (mode === "summary" && step >= 3) return { text: "~40 tokens · LOSSY", color: "amber" };
         if (mode === "rag" && step >= 4) return { text: "FRAGMENTED", color: "amber" };
         return undefined;
@@ -167,7 +189,7 @@ const ProblemSlide = () => {
                         <div className="h-full rounded-full transition-all duration-300"
                             style={{
                                 width: `${(step / max) * 100}%`,
-                                background: mode === "history" && step > 0 ? (cumTokens[step - 1] > 280 ? "#ef4444" : cumTokens[step - 1] > 150 ? "#f59e0b" : "#6366f1") : "#6366f1",
+                                background: mode === "history" && step > 0 ? (historyTokens[step - 1] > 480 ? "#ef4444" : historyTokens[step - 1] > 400 ? "#f59e0b" : "#6366f1") : "#6366f1",
                             }} />
                     </div>
                     <span className="text-[11px] text-gray-400 font-mono tabular-nums">{step}/{max}</span>
@@ -175,30 +197,53 @@ const ProblemSlide = () => {
             </div>
 
             {/* ── panels ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 flex-1 min-h-0">
                 {/* LEFT — conversation */}
                 <PanelShell title="conversation.log" innerRef={leftRef}>
-                    {step === 0 && <Empty>Press Play to simulate</Empty>}
-                    {mode === "history" && convo.slice(0, step).map((_, i) => (
-                        <Msg key={i} i={i} isNew={i === step - 1} strike={step >= 5 && obsolete.has(i)} />
+                    {/* Base conversation — always visible in all modes */}
+                    {convo.map((_, i) => (
+                        <Msg key={i} i={i} score={mode === "rag" && step >= 3 ? ragScores[i] : undefined} />
                     ))}
-                    {mode === "summary" && step >= 1 && convo.map((_, i) => (
-                        <Msg key={i} i={i} dim={step >= 3} />
-                    ))}
-                    {mode === "rag" && step >= 1 && (
-                        <>
-                            <div className="border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2 mb-1">
-                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Query</span>
-                                <p className="text-indigo-700 text-[12px] font-medium mt-0.5">Why does the API use MongoDB instead of PostgreSQL?</p>
+                    {/* History: play hint + new messages */}
+                    {mode === "history" && step === 0 && (
+                        <div className="text-center text-gray-300 text-[11px] mt-2 py-2 border-t border-dashed border-gray-200">
+                            ▶ Press Play — new requests will resend this entire history
+                        </div>
+                    )}
+                    {mode === "history" && step > 0 && (
+                        <div className="border-t border-dashed border-gray-200 mt-2 pt-2">
+                            <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest">New requests</span>
+                        </div>
+                    )}
+                    {mode === "history" && newRequests.slice(0, step).map((m, i) => {
+                        const isUser = m.role === "user";
+                        return (
+                            <div key={`new-${i}`} className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+                                style={{ animation: i === step - 1 ? "fadeSlideIn 0.3s ease-out" : undefined }}>
+                                <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 ${isUser ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"
+                                    }`}>
+                                    {isUser ? "U" : "✦"}
+                                </div>
+                                <div className={`flex flex-col gap-0.5 min-w-0 ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: "85%" }}>
+                                    <span className={`text-[11px] font-semibold ${isUser ? "text-indigo-500" : "text-emerald-500"}`}>
+                                        {isUser ? "You" : "Assistant"}
+                                    </span>
+                                    <div className={`text-[13px] leading-relaxed px-3 py-2 rounded-xl ${isUser
+                                        ? "bg-indigo-50 text-gray-700 rounded-tr-sm"
+                                        : "bg-gray-50 text-gray-700 rounded-tl-sm border border-gray-100"
+                                        }`}>
+                                        {m.text}
+                                    </div>
+                                </div>
                             </div>
-                            {convo.map((_, i) => (
-                                <Msg key={i} i={i}
-                                    score={step >= 3 ? ragScores[i] : undefined}
-                                    hl={step >= 4 && ragHits.has(i)}
-                                    dim={step >= 4 && !ragHits.has(i)}
-                                />
-                            ))}
-                        </>
+                        );
+                    })}
+                    {/* RAG query banner */}
+                    {mode === "rag" && step >= 1 && (
+                        <div className="border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2 mt-2">
+                            <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Query</span>
+                            <p className="text-indigo-700 text-[12px] font-medium mt-0.5">Why does the API use MongoDB instead of PostgreSQL?</p>
+                        </div>
                     )}
                 </PanelShell>
 
@@ -207,38 +252,41 @@ const ProblemSlide = () => {
                     badge={rightBadge()} innerRef={rightRef}>
 
                     {/* ── FULL HISTORY ── */}
-                    {mode === "history" && step === 0 && <Empty>Waiting...</Empty>}
+                    {mode === "history" && step === 0 && <Empty>Waiting for a new request...</Empty>}
                     {mode === "history" && step > 0 && (
                         <div className="flex flex-col gap-1">
-                            <Badge text={`Sending all ${step} messages every request`} warn={step > 6} />
-                            {convo.slice(0, step).map((m, i) => (
-                                <div key={i} className={`text-[13px] leading-snug py-0.5 pl-2 border-l-2 transition-all duration-300 ${step >= 5 && obsolete.has(i)
-                                    ? "border-red-300 text-gray-300 line-through"
-                                    : "border-indigo-200 text-gray-600"
-                                    }`}
-                                    style={{ animation: i === step - 1 ? "fadeSlideIn 0.3s ease-out" : undefined }}>
-                                    <span className="font-mono text-gray-300 text-[10px] mr-1">{m.id}</span>
+                            {/* All base messages resent */}
+                            {convo.map((m, i) => (
+                                <div key={i} className={`text-[12px] leading-snug py-0.5 pl-2 border-l-2 transition-all duration-300 ${obsolete.has(i)
+                                        ? "border-red-300 text-gray-300 line-through"
+                                        : "border-gray-200 text-gray-400"
+                                    }`}>
+                                    <span className="font-mono text-gray-300 text-[9px] mr-1">{m.id}</span>
                                     {m.text}
-                                    {step >= 5 && obsolete.has(i) && <span className="text-red-400 text-[10px] ml-1">OBSOLETE</span>}
+                                    {obsolete.has(i) && <span className="text-red-400 text-[9px] ml-1">OBSOLETE</span>}
                                 </div>
                             ))}
-                            {step >= 5 && (
-                                <div className="mt-2 text-[10px] text-red-500 bg-red-50 border border-red-100 rounded px-2 py-1.5 font-medium"
-                                    style={{ animation: step === 5 ? "fadeSlideIn 0.3s ease-out" : undefined }}>
-                                    ⚠ PostgreSQL context is obsolete but still sent — wasting tokens and adding noise
+                            {/* New messages also sent */}
+                            {newRequests.slice(0, step).map((m, i) => (
+                                <div key={`nr-${i}`}
+                                    className="text-[12px] leading-snug py-0.5 pl-2 border-l-2 border-indigo-200 text-gray-600"
+                                    style={{ animation: i === step - 1 ? "fadeSlideIn 0.3s ease-out" : undefined }}>
+                                    <span className="font-mono text-indigo-400 text-[9px] mr-1">{m.id}</span>
+                                    {m.text}
+                                    {i === step - 1 && <span className="text-indigo-500 text-[9px] ml-1">NEW</span>}
                                 </div>
-                            )}
+                            ))}
                             {/* Token bar */}
                             <div className="mt-2 flex items-center gap-2">
                                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div className="h-full rounded-full transition-all duration-500"
                                         style={{
-                                            width: `${(cumTokens[step - 1] / 400) * 100}%`,
-                                            background: cumTokens[step - 1] > 280 ? "#ef4444" : cumTokens[step - 1] > 150 ? "#f59e0b" : "#22c55e",
+                                            width: `${(historyTokens[step - 1] / 600) * 100}%`,
+                                            background: historyTokens[step - 1] > 480 ? "#ef4444" : historyTokens[step - 1] > 400 ? "#f59e0b" : "#22c55e",
                                         }} />
                                 </div>
-                                <span className={`text-[10px] font-mono font-bold tabular-nums ${cumTokens[step - 1] > 280 ? "text-red-500" : cumTokens[step - 1] > 150 ? "text-amber-600" : "text-emerald-500"}`}>
-                                    {cumTokens[step - 1]} tok
+                                <span className={`text-[10px] font-mono font-bold tabular-nums ${historyTokens[step - 1] > 480 ? "text-red-500" : historyTokens[step - 1] > 400 ? "text-amber-600" : "text-emerald-500"}`}>
+                                    {historyTokens[step - 1]} tok
                                 </span>
                             </div>
                         </div>
@@ -282,12 +330,6 @@ const ProblemSlide = () => {
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            )}
-                            {step >= 5 && (
-                                <div className="text-[10px] text-amber-600 bg-amber-50 border border-amber-100 rounded px-2 py-1.5 font-medium"
-                                    style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
-                                    ⚠ If the user asks &quot;why did we switch databases?&quot; — the LLM has no answer
                                 </div>
                             )}
                         </div>
@@ -339,12 +381,6 @@ const ProblemSlide = () => {
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            )}
-                            {step >= 5 && (
-                                <div className="text-[10px] text-amber-600 bg-amber-50 border border-amber-100 rounded px-2 py-1.5 font-medium"
-                                    style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
-                                    ⚠ Chunks are disconnected — the reasoning chain from PostgreSQL → MongoDB → Mongoose is broken
                                 </div>
                             )}
                         </div>

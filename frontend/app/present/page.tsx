@@ -11,7 +11,7 @@ import {
 } from "@/component/present";
 
 const slides = [
-  { tag: "THE PROBLEM", title: "Stop Paying LLMs to Remember the Same Thing", hook: "Have you ever watched your OpenAI bill grow because your app keeps resending the same context?" },
+  { tag: "THE PROBLEM", title: "Stop Paying LLMs to Remember the Same Thing", hook: "Have you ever watched your OpenAI bill go up just because your LLM keeps sending the context again and again?" },
   { tag: "CORE IDEA", title: "Lethus Memory Layer", hook: "Send the Present + the Most Meaningful Story" },
   { tag: "ALGORITHM", title: "The Algorithmic Engine", hook: "Turning Context into an Optimization Problem" },
   { tag: "DIFFERENTIATION", title: "Why This Is Different", hook: "Not RAG. Not Summarization. Not Prompt Compression." },
