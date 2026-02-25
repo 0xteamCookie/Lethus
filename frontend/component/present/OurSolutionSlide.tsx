@@ -34,36 +34,36 @@ interface StateDoc {
 }
 
 const stateSnapshots: Record<number, StateDoc> = {
-    1: { project: "E-commerce backend", stack: [], currentTask: "Setting up project", openQuestions: [], resolved: [] },
-    2: { project: "E-commerce backend", stack: ["Runtime: Node + Express"], currentTask: "Setting up runtime", openQuestions: [], resolved: [] },
     3: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: PostgreSQL"], currentTask: "Setting up database", openQuestions: [], resolved: [] },
-    4: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: PostgreSQL", "Payments: Stripe"], currentTask: "Integrating payments", openQuestions: [], resolved: [] },
-    5: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Payments: Stripe"], currentTask: "Migrating to MongoDB", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
     6: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Payments: Stripe"], currentTask: "Setting up user authentication", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
-    7: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Configuring JWT auth", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
-    8: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Adding orders collection", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
     9: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Debugging orders endpoint", openQuestions: ["Orders 500 error cause unknown"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
-    10: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Orders endpoint working", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)"] },
-    11: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Adding product search", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)"] },
     12: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Optimizing search performance", openQuestions: ["Search too slow on large datasets"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)"] },
-    13: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Search optimization", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)"] },
-    14: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Switching to PayPal", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
     15: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "PayPal configuration", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
-    16: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Adding order status tracking", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
-    17: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Implementing order statuses", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
     18: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Search performance issue", openQuestions: ["Search still slow on 100k products despite index"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
-    19: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Evaluating Redis for caching", openQuestions: ["Redis implementation details not decided yet"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
     20: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal", "Cache: Redis (just added)"], currentTask: "Adding Redis for search caching", openQuestions: ["Redis implementation details not decided yet"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Switched Stripe → PayPal at T14 (too many fees)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)"] },
 };
 
 const changelog: Record<number, string> = {
-    3: "Init project · Stack: Node+Express, PostgreSQL",
-    6: "Added Stripe · Switched DB → MongoDB · Started auth",
-    9: "Added JWT auth · Orders collection · Bug: 500 on orders",
-    12: "Fixed orders bug (await) · Added search · Perf issue",
-    15: "Indexed product name · Switched Stripe → PayPal · Sandbox up",
-    18: "Order status tracking · Search still slow at 100k",
-    20: "Evaluating Redis · Added Redis for caching",
+    1: "User wants to build an e-commerce backend",
+    2: "Stack decision: Node.js + Express",
+    3: "Database chosen: PostgreSQL",
+    4: "Integrating Stripe for payments",
+    5: "Switched DB → MongoDB (data too flexible for SQL)",
+    6: "Setting up user authentication",
+    7: "Auth strategy: JWT tokens",
+    8: "Added orders collection to MongoDB",
+    9: "Bug: /orders endpoint returns 500 error",
+    10: "Fixed orders bug — missing await on DB query",
+    11: "Adding product search feature",
+    12: "Search performance too slow on large datasets",
+    13: "Added text index on product name field",
+    14: "Switching Stripe → PayPal (fees too high)",
+    15: "PayPal sandbox environment ready",
+    16: "Adding order status tracking",
+    17: "Order statuses: pending → shipped → delivered",
+    18: "Search still slow at 100k rows despite index",
+    19: "Evaluating Redis for search caching",
+    20: "Confirmed: adding Redis cache layer",
 };
 
 function StateDocView({ doc, flash }: { doc: StateDoc; flash: boolean }) {
@@ -187,7 +187,15 @@ const OurSolutionSlide = () => {
         }
     }, [visibleTurn]);
 
-    const currentState = visibleTurn > 0 ? stateSnapshots[visibleTurn] : null;
+    const currentState = (() => {
+        if (visibleTurn <= 0) return null;
+        const keys = Object.keys(stateSnapshots).map(Number).sort((a, b) => a - b);
+        let best: number | null = null;
+        for (const k of keys) {
+            if (k <= visibleTurn) best = k;
+        }
+        return best !== null ? stateSnapshots[best] : null;
+    })();
 
     return (
         <div className="flex flex-col gap-4 flex-1">
@@ -274,7 +282,7 @@ const OurSolutionSlide = () => {
                     </div>
                     <div className="flex-1 overflow-y-auto px-4 py-3 max-h-[340px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {currentState ? (
-                            <StateDocView doc={currentState} flash={flash} />
+                            <StateDocView doc={currentState} flash={flash && visibleTurn in stateSnapshots} />
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-gray-300 text-sm h-full min-h-[200px]">
                                 Waiting for conversation...
