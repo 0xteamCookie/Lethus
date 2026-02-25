@@ -135,48 +135,7 @@ export default function Present() {
         </aside>
       </div>
 
-      {/* Footer */}
-      <footer className="flex items-center justify-between px-6 sm:px-10 py-4 border-t border-gray-200 bg-white shrink-0">
-        <button
-          onClick={prev}
-          disabled={current === 0}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 ${current === 0
-            ? "border-gray-100 text-gray-300 cursor-not-allowed"
-            : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 cursor-pointer"
-            }`}
-        >
-          ← Previous
-        </button>
 
-        {/* Mobile dots */}
-        <div className="flex md:hidden items-center gap-1.5">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              className="border-0 p-0 cursor-pointer rounded-full transition-all duration-300"
-              style={{
-                width: i === current ? "20px" : "8px",
-                height: "8px",
-                background: i === current ? "#7c3aed" : "#e5e7eb",
-              }}
-            />
-          ))}
-        </div>
-
-        <span className="hidden sm:block text-gray-300 text-xs select-none">use arrow keys to navigate</span>
-
-        <button
-          onClick={next}
-          disabled={current === slides.length - 1}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold border transition-all duration-200 ${current === slides.length - 1
-            ? "border-gray-100 text-gray-300 cursor-not-allowed"
-            : "bg-violet-600 border-violet-600 text-white hover:bg-violet-700 cursor-pointer shadow-sm"
-            }`}
-        >
-          Next →
-        </button>
-      </footer>
     </div>
   );
 }
