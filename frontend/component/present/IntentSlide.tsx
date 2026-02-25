@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 
-type Intent = "RECALL" | "CONTINUATION" | "CLARIFICATION" | "NEW_TOPIC";
+type Intent = "RECALL" | "CONTINUATION" | "NEW_TOPIC";
 
 interface Message {
     role: "user" | "assistant";
@@ -16,13 +16,13 @@ const conversation: Message[] = [
     { role: "assistant", text: "Great choice! When are you thinking of going? Spring for cherry blossoms is popular." },
     { role: "user", text: "April sounds good, maybe 10 days", intent: "CONTINUATION", reasoning: "Continuing the current thread" },
     { role: "assistant", text: "Perfect. For 10 days I'd suggest Tokyo (4 days), Kyoto (3 days), and Osaka (3 days)." },
-    { role: "user", text: "Why those three cities specifically?", intent: "CLARIFICATION", reasoning: "Asking about the last response" },
+    { role: "user", text: "Why those three cities specifically?", intent: "CONTINUATION", reasoning: "Following up on the itinerary" },
     { role: "assistant", text: "Tokyo for modern culture, Kyoto for temples and history, Osaka for street food. They're connected by bullet train." },
     { role: "user", text: "What budget did we settle on earlier?", intent: "RECALL", reasoning: "Searching past conversation history" },
     { role: "assistant", text: "You mentioned around $3000 total back when we first discussed it." },
     { role: "user", text: "Okay add Hiroshima too", intent: "CONTINUATION", reasoning: "Building on the itinerary" },
     { role: "assistant", text: "Done. I'd take one day from Osaka for a Hiroshima day trip via bullet train." },
-    { role: "user", text: "Can you explain the rail pass thing again?", intent: "CLARIFICATION", reasoning: "Asking about a previous explanation" },
+    { role: "user", text: "Can you explain the rail pass thing again?", intent: "RECALL", reasoning: "Retrieving earlier rail pass discussion" },
     { role: "assistant", text: "A 14-day Japan Rail Pass costs around $380 and gives unlimited bullet train rides. Saves money vs individual tickets." },
     { role: "user", text: "Actually lets also plan food recommendations", intent: "NEW_TOPIC", reasoning: "Switching to a new subject" },
     { role: "assistant", text: "Sure! Each city has specialties. Want me to go city by city?" },
@@ -43,12 +43,7 @@ const intentConfig: Record<Intent, { color: string; bg: string; border: string; 
         border: "border-emerald-200",
         strategy: "Use last 2-3 turns",
     },
-    CLARIFICATION: {
-        color: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-        strategy: "Use last response only",
-    },
+
     NEW_TOPIC: {
         color: "text-gray-600",
         bg: "bg-gray-50",
@@ -57,14 +52,13 @@ const intentConfig: Record<Intent, { color: string; bg: string; border: string; 
     },
 };
 
-const allIntents: Intent[] = ["RECALL", "CONTINUATION", "CLARIFICATION", "NEW_TOPIC"];
+const allIntents: Intent[] = ["RECALL", "CONTINUATION", "NEW_TOPIC"];
 
 function ContextBar({ intent }: { intent: Intent | null }) {
     const blocks = [
         { label: "State Doc", always: true },
         { label: "Full History", for: ["RECALL"] as Intent[] },
         { label: "Last N Turns", for: ["CONTINUATION"] as Intent[] },
-        { label: "Last Response", for: ["CLARIFICATION"] as Intent[] },
     ];
 
     return (
@@ -89,59 +83,30 @@ function ContextBar({ intent }: { intent: Intent | null }) {
 
 const IntentSlide = () => {
     const [visibleCount, setVisibleCount] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
     const [classifyingIdx, setClassifyingIdx] = useState<number | null>(null);
     const [classifiedIdx, setClassifiedIdx] = useState<number | null>(null);
     const chatRef = useRef<HTMLDivElement>(null);
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const clear = () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    const next = () => {
+        if (visibleCount >= conversation.length) return;
+        const nextIdx = visibleCount;
+        setVisibleCount(nextIdx + 1);
 
-    const play = () => {
-        if (visibleCount >= conversation.length) {
-            setVisibleCount(0);
-            setClassifyingIdx(null);
-            setClassifiedIdx(null);
+        const msg = conversation[nextIdx];
+        if (msg.intent) {
+            setClassifyingIdx(nextIdx);
+            setTimeout(() => {
+                setClassifyingIdx(null);
+                setClassifiedIdx(nextIdx);
+            }, 500);
         }
-        setIsPlaying(true);
     };
 
     const reset = () => {
-        clear();
-        setIsPlaying(false);
         setVisibleCount(0);
         setClassifyingIdx(null);
         setClassifiedIdx(null);
     };
-
-    useEffect(() => {
-        if (!isPlaying) return;
-
-        intervalRef.current = setInterval(() => {
-            setVisibleCount((prev) => {
-                const next = prev + 1;
-                if (next > conversation.length) {
-                    setIsPlaying(false);
-                    return conversation.length;
-                }
-
-                const msg = conversation[next - 1];
-                if (msg.intent) {
-                    setClassifyingIdx(next - 1);
-                    setTimeout(() => {
-                        setClassifyingIdx(null);
-                        setClassifiedIdx(next - 1);
-                    }, 600);
-                }
-
-                return next;
-            });
-        }, 1200);
-
-        return () => clear();
-    }, [isPlaying]);
 
     useEffect(() => {
         if (chatRef.current) {
@@ -167,10 +132,11 @@ const IntentSlide = () => {
         <div className="flex flex-col gap-3 flex-1">
             <div className="flex items-center gap-2">
                 <button
-                    onClick={isPlaying ? () => { clear(); setIsPlaying(false); } : play}
-                    className="px-4 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all duration-200 bg-gray-900 border-gray-900 text-white hover:bg-gray-800"
+                    onClick={visibleCount >= conversation.length ? reset : next}
+                    disabled={classifyingIdx !== null}
+                    className="px-4 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all duration-200 bg-gray-900 border-gray-900 text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    {isPlaying ? "Pause" : visibleCount >= conversation.length ? "Replay" : "Play"}
+                    {visibleCount >= conversation.length ? "↻ Reset" : visibleCount === 0 ? "Start" : "Next Step →"}
                 </button>
                 <button
                     onClick={reset}
@@ -215,7 +181,7 @@ const IntentSlide = () => {
                                     }`}>
                                     {msg.text}
                                 </span>
-                                {msg.intent && i < visibleCount && (classifiedIdx === i || (classifiedIdx !== null && classifiedIdx >= i) || (!isPlaying && visibleCount > i)) && (
+                                {msg.intent && (
                                     <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded shrink-0 ml-auto ${intentConfig[msg.intent].bg
                                         } ${intentConfig[msg.intent].color} ${intentConfig[msg.intent].border} border`}>
                                         {msg.intent}

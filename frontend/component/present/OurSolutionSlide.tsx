@@ -3,26 +3,26 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const turns = [
-    { id: "T1", text: "let's build an e-commerce backend" },
-    { id: "T2", text: "use Node and Express" },
-    { id: "T3", text: "PostgreSQL for the database" },
+    { id: "T1", text: "build an e-commerce backend" },
+    { id: "T2", text: "use Node + Express" },
+    { id: "T3", text: "PostgreSQL for the DB" },
     { id: "T4", text: "add Stripe for payments" },
-    { id: "T5", text: "actually let's use MongoDB instead of PostgreSQL, our data is too flexible for relational" },
-    { id: "T6", text: "set up user authentication" },
-    { id: "T7", text: "JWT tokens for auth" },
-    { id: "T8", text: "add an orders collection to MongoDB" },
-    { id: "T9", text: "the orders endpoint is throwing a 500 error" },
-    { id: "T10", text: "okay fixed it, was a missing await" },
-    { id: "T11", text: "add product search functionality" },
-    { id: "T12", text: "search is too slow on large datasets" },
-    { id: "T13", text: "let's add an index on the product name field" },
-    { id: "T14", text: "actually Stripe has too many fees, switch to PayPal" },
-    { id: "T15", text: "PayPal sandbox is set up" },
+    { id: "T5", text: "switch to MongoDB, data too flexible" },
+    { id: "T6", text: "set up user auth" },
+    { id: "T7", text: "use JWT tokens" },
+    { id: "T8", text: "add orders collection" },
+    { id: "T9", text: "orders endpoint 500 error" },
+    { id: "T10", text: "fixed it, missing await" },
+    { id: "T11", text: "add product search" },
+    { id: "T12", text: "search too slow" },
+    { id: "T13", text: "add index on product name" },
+    { id: "T14", text: "Stripe fees too high, use PayPal" },
+    { id: "T15", text: "PayPal sandbox ready" },
     { id: "T16", text: "add order status tracking" },
-    { id: "T17", text: "statuses should be: pending, processing, shipped, delivered" },
-    { id: "T18", text: "the search index helped but still slow on 100k products" },
-    { id: "T19", text: "should we add Redis for caching search results?" },
-    { id: "T20", text: "yes let's add Redis" },
+    { id: "T17", text: "statuses: pending → shipped → delivered" },
+    { id: "T18", text: "search still slow at 100k rows" },
+    { id: "T19", text: "add Redis for caching?" },
+    { id: "T20", text: "yes, add Redis" },
 ];
 
 interface StateDoc {
@@ -54,6 +54,16 @@ const stateSnapshots: Record<number, StateDoc> = {
     18: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Search performance issue", openQuestions: ["Search still slow on 100k products despite index"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
     19: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Evaluating Redis for caching", openQuestions: ["Redis implementation details not decided yet"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
     20: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal", "Cache: Redis (just added)"], currentTask: "Adding Redis for search caching", openQuestions: ["Redis implementation details not decided yet"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Switched Stripe → PayPal at T14 (too many fees)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)"] },
+};
+
+const changelog: Record<number, string> = {
+    3: "Init project · Stack: Node+Express, PostgreSQL",
+    6: "Added Stripe · Switched DB → MongoDB · Started auth",
+    9: "Added JWT auth · Orders collection · Bug: 500 on orders",
+    12: "Fixed orders bug (await) · Added search · Perf issue",
+    15: "Indexed product name · Switched Stripe → PayPal · Sandbox up",
+    18: "Order status tracking · Search still slow at 100k",
+    20: "Evaluating Redis · Added Redis for caching",
 };
 
 function StateDocView({ doc, flash }: { doc: StateDoc; flash: boolean }) {
@@ -94,11 +104,35 @@ function Section({ heading, items, highlight, warn }: { heading: string; items: 
     );
 }
 
+function ChangelogView({ turnCount, flash }: { turnCount: number; flash: boolean }) {
+    const entries = Array.from({ length: turnCount }, (_, i) => ({
+        turn: i + 1,
+        text: changelog[i + 1],
+    })).filter((e) => e.text);
+
+    return (
+        <div className="flex flex-col gap-1">
+            {entries.map((entry, idx) => (
+                <div
+                    key={entry.turn}
+                    className={`flex items-start gap-2 px-2 py-1 rounded-lg transition-all duration-300 ${idx === entries.length - 1 && flash ? "bg-violet-50 border border-violet-200" : ""
+                        }`}
+                    style={{ animation: idx === entries.length - 1 && flash ? "fadeSlideIn 0.3s ease-out" : undefined }}
+                >
+                    <span className="text-[9px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">T{entry.turn}</span>
+                    <span className="text-[12px] text-gray-600 leading-snug">{entry.text}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 const OurSolutionSlide = () => {
     const [visibleTurn, setVisibleTurn] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [flash, setFlash] = useState(false);
     const chatRef = useRef<HTMLDivElement>(null);
+    const changelogRef = useRef<HTMLDivElement>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const play = () => {
@@ -148,6 +182,9 @@ const OurSolutionSlide = () => {
         if (chatRef.current) {
             chatRef.current.scrollTop = chatRef.current.scrollHeight;
         }
+        if (changelogRef.current) {
+            changelogRef.current.scrollTop = changelogRef.current.scrollHeight;
+        }
     }, [visibleTurn]);
 
     const currentState = visibleTurn > 0 ? stateSnapshots[visibleTurn] : null;
@@ -180,7 +217,7 @@ const OurSolutionSlide = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-0">
                 <div className="flex flex-col rounded-xl border border-gray-200 overflow-hidden bg-white">
                     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
                         <div className="flex gap-1">
@@ -238,6 +275,34 @@ const OurSolutionSlide = () => {
                     <div className="flex-1 overflow-y-auto px-4 py-3 max-h-[340px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {currentState ? (
                             <StateDocView doc={currentState} flash={flash} />
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-gray-300 text-sm h-full min-h-[200px]">
+                                Waiting for conversation...
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex flex-col rounded-xl border border-gray-200 overflow-hidden bg-white">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+                        <div className="flex gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
+                        </div>
+                        <span className="text-[11px] text-gray-400 font-medium ml-2">changelog</span>
+                        {visibleTurn > 0 && (
+                            <span className="ml-auto text-[9px] font-medium text-violet-500 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100">
+                                {visibleTurn} entries
+                            </span>
+                        )}
+                    </div>
+                    <div
+                        ref={changelogRef}
+                        className="flex-1 overflow-y-auto px-3 py-3 max-h-[340px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
+                        {visibleTurn > 0 ? (
+                            <ChangelogView turnCount={visibleTurn} flash={flash} />
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-gray-300 text-sm h-full min-h-[200px]">
                                 Waiting for conversation...
