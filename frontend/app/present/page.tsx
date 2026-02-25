@@ -7,8 +7,16 @@ import {
   ComparisonSlide,
   ImpactSlide,
   OurSolutionSlide,
-  slides,
 } from "@/component/present";
+
+const slides = [
+  { tag: "THE PROBLEM", title: "Stop Paying LLMs to Remember the Same Thing", hook: "Have you ever watched your OpenAI bill grow because your app keeps resending the same context?" },
+  { tag: "CORE IDEA", title: "Lethus Memory Layer", hook: "Send the Present + the Most Meaningful Story" },
+  { tag: "ALGORITHM", title: "The Algorithmic Engine", hook: "Turning Context into an Optimization Problem" },
+  { tag: "DIFFERENTIATION", title: "Why This Is Different", hook: "Not RAG. Not Summarization. Not Prompt Compression." },
+  { tag: "IMPACT & VISION", title: "Pay for Signal, Not Tokens", hook: "" },
+  { tag: "OUR SOLUTION", title: "Live State Tracking in Action", hook: "Watch how Lethus builds a structured state document from a 20-turn conversation — in real time." },
+];
 
 export default function Present() {
   const [current, setCurrent] = useState(0);
@@ -92,12 +100,12 @@ export default function Present() {
               </p>
             )}
 
-            {slide.content.type === "problem" && <ProblemSlide content={slide.content} />}
-            {slide.content.type === "memory" && <MemorySlide content={slide.content} />}
-            {slide.content.type === "steps" && <StepsSlide content={slide.content} />}
-            {slide.content.type === "comparison" && <ComparisonSlide content={slide.content} />}
-            {slide.content.type === "impact" && <ImpactSlide content={slide.content} />}
-            {slide.content.type === "solution" && <OurSolutionSlide />}
+            {current === 0 && <ProblemSlide />}
+            {current === 1 && <MemorySlide />}
+            {current === 2 && <StepsSlide />}
+            {current === 3 && <ComparisonSlide />}
+            {current === 4 && <ImpactSlide />}
+            {current === 5 && <OurSolutionSlide />}
           </div>
         </main>
 
