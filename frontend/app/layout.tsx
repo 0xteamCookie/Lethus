@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ConversationProvider } from "@/lib/conversation";
 
 const inter = Inter({
   variable: "--font-primary",
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.variable}>
-        {children}
+        <ConversationProvider>
+          {children}
+        </ConversationProvider>
       </body>
     </html>
   );

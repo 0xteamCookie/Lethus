@@ -34,9 +34,9 @@ export default function AnalyticsSection({ open, onToggle }: Props) {
                     <polyline points="6 9 12 15 18 9" />
                 </svg>
             </button>
-            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-[400px]" : "max-h-0"}`}>
+            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-100" : "max-h-0"}`}>
                 <div className="flex items-center justify-center px-4 py-6 bg-surface-white border-t border-border-subtle">
-                    <div className="w-full min-h-[140px] rounded-lg border border-dashed border-border flex items-center justify-center">
+                    <div className="w-full min-h-35 rounded-lg border border-dashed border-border flex items-center justify-center">
                         <span className="text-[12px] text-text-tertiary font-primary">Charts coming soon</span>
                     </div>
                 </div>

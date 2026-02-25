@@ -30,13 +30,14 @@ export function applyTokenBudget(
   budget: number = config.retrievalTokenBudget,
 ): BudgetResult {
   // Start with recent turns — always included
-  const included = new Map<number, StoredTurn>();
+  const included = new Map<string, StoredTurn>();
   let usedTokens = 0;
 
   // Add recent turns first
   for (const turn of recentTurns) {
-    if (!included.has(turn.turnNumber)) {
-      included.set(turn.turnNumber, turn);
+    const key = `${turn.turnNumber}_${turn.role}`;
+    if (!included.has(key)) {
+      included.set(key, turn);
       usedTokens += turn.tokenCount;
     }
   }
@@ -51,13 +52,15 @@ export function applyTokenBudget(
 
   // Add Kadane-selected turns within budget
   for (const turnNumber of prioritizedTurnNumbers) {
-    if (included.has(turnNumber)) continue; // Already included as recent
-
     const turns = candidateMap.get(turnNumber);
     if (!turns) continue;
 
-    // Calculate tokens for both user and assistant sides of this turn
-    const turnsTokens = turns.reduce((sum, t) => sum + t.tokenCount, 0);
+    // Skip turns already included as recent
+    const newTurns = turns.filter((t) => !included.has(`${t.turnNumber}_${t.role}`));
+    if (newTurns.length === 0) continue;
+
+    // Calculate tokens for the new sides of this turn
+    const turnsTokens = newTurns.reduce((sum, t) => sum + t.tokenCount, 0);
 
     if (usedTokens + turnsTokens > budget) {
       // Skip this turn — would exceed budget
@@ -65,17 +68,14 @@ export function applyTokenBudget(
       continue;
     }
 
-    for (const turn of turns) {
-      included.set(
-        `${turn.turnNumber}_${turn.role}` as unknown as number,
-        turn,
-      );
+    for (const turn of newTurns) {
+      included.set(`${turn.turnNumber}_${turn.role}`, turn);
     }
     usedTokens += turnsTokens;
   }
 
   // Convert to sorted array
-  const includedArray = Array.from(new Set([...included.values()])).sort(
+  const includedArray = Array.from(included.values()).sort(
     (a, b) =>
       a.turnNumber !== b.turnNumber
         ? a.turnNumber - b.turnNumber

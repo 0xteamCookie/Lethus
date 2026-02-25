@@ -1,6 +1,6 @@
 // count tokens exactly as openai does
 
-import { encode } from "gpt-tokenizer";
+import { encode, decode } from "gpt-tokenizer";
 import type { ChatMessage } from "../types";
 
 export function countTokens(text: string): number {
@@ -34,14 +34,8 @@ export function countMessagesTokens(messages: ChatMessage[]): number {
 export function truncateToTokens(text: string, maxTokens: number): string {
   const tokens = encode(text);
   if (tokens.length <= maxTokens) {
-    return text; // Already within limit
+    return text;
   }
 
-  // This is a simple approach: slice tokens and decode.
-  // gpt-tokenizer doesn't expose a decode function directly,
-  // so we approximate by chopping characters.
-  // Ratio: tokens.length / text.length gives chars-per-token average.
-  const ratio = text.length / tokens.length;
-  const targetChars = Math.floor(maxTokens * ratio * 0.95); // 5% safety margin
-  return text.slice(0, targetChars) + "...";
+  return decode(tokens.slice(0, maxTokens));
 }

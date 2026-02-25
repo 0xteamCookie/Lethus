@@ -36,6 +36,14 @@ import type { Intent } from "../types";
 const intentCache = new Map<string, Intent>();
 const CACHE_MAX_SIZE = 1000;
 
+function djb2(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return hash >>> 0;
+}
+
 const INTENT_SYSTEM_PROMPT = `You classify user messages in a multi-turn conversation.
 
 Classify into exactly one of these four categories:
@@ -58,8 +66,8 @@ export async function classifyIntent(
   currentMessage: string,
   recentContext: string, // Last 1-2 turns as context for classification
 ): Promise<Intent> {
-  // Check cache first
-  const cacheKey = `${currentMessage.slice(0, 100)}`;
+  // Check cache first -- hash both message and context to avoid collisions
+  const cacheKey = `${djb2(currentMessage)}_${djb2(recentContext)}`;
   if (intentCache.has(cacheKey)) {
     return intentCache.get(cacheKey)!;
   }
