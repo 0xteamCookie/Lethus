@@ -157,3 +157,100 @@ export async function sendMessage(
       res.headers.get("X-Lethus-Conversation-Id") ?? conversationId ?? "",
   };
 }
+
+// Streaming chat completions using Server-Sent Events (OpenAI-compatible).
+// Calls the same endpoint but with stream: true and parses SSE chunks,
+// invoking callbacks as tokens arrive.
+export async function sendMessageStream(
+  message: string,
+  {
+    conversationId,
+    model = "gpt-4o-mini",
+    onToken,
+    onDone,
+  }: {
+    conversationId?: string;
+    model?: string;
+    onToken?: (token: string) => void;
+    onDone?: (info: { conversationId: string }) => void;
+  },
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/v1/chat/completions`, {
+    method: "POST",
+    headers: headers(conversationId),
+    body: JSON.stringify({
+      model,
+      stream: true,
+      messages: [{ role: "user", content: message }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? "Failed to send message");
+  }
+
+  const resolvedConversationId =
+    res.headers.get("X-Lethus-Conversation-Id") ?? conversationId ?? "";
+
+  const body = res.body;
+  if (!body) {
+    throw new Error("Streaming response body is not available");
+  }
+
+  const reader = body.getReader();
+  const decoder = new TextDecoder("utf-8");
+
+  let buffer = "";
+
+  try {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      let idx: number;
+      while ((idx = buffer.indexOf("\n\n")) !== -1) {
+        const rawEvent = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 2);
+
+        if (!rawEvent) continue;
+
+        const lines = rawEvent
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5).trim();
+
+          if (dataStr === "[DONE]") {
+            onDone?.({ conversationId: resolvedConversationId });
+            return;
+          }
+
+          try {
+            const payload = JSON.parse(dataStr) as {
+              choices?: Array<{
+                delta?: { content?: string | null };
+              }>;
+            };
+
+            const delta = payload.choices?.[0]?.delta?.content ?? undefined;
+            if (delta && onToken) {
+              onToken(delta);
+            }
+          } catch {
+            // ignore malformed data lines
+          }
+        }
+      }
+    }
+  } finally {
+    // Ensure we signal completion even if the stream ends without [DONE]
+    onDone?.({ conversationId: resolvedConversationId });
+  }
+}

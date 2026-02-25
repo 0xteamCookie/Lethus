@@ -12,7 +12,7 @@ import {
 import {
   listConversations,
   getConversationTurns,
-  sendMessage,
+  sendMessageStream,
   type ConversationSummary,
   type Turn,
   type LethusMetadata,
@@ -80,31 +80,47 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
   const send = useCallback(
     async (text: string): Promise<string> => {
       setSending(true);
-      setMessages((prev) => [...prev, { role: "user", content: text }]);
+      // Optimistically add user message and an empty assistant message to stream into.
+      let assistantIndex = -1;
+      setMessages((prev) => {
+        const next = [...prev, { role: "user", content: text }, { role: "assistant", content: "" }];
+        assistantIndex = next.length - 1;
+        return next;
+      });
+
+      let resolvedConversationId = currentId ?? "";
 
       try {
-        const resp = await sendMessage(text, currentId ?? undefined);
-        const assistantContent =
-          resp.choices[0]?.message?.content ?? "";
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: assistantContent,
-            metadata: resp.usage.lethus_metadata,
+        await sendMessageStream(text, {
+          conversationId: currentId ?? undefined,
+          onToken: (token) => {
+            setMessages((prev) => {
+              // Fallback to last message if index is not yet set
+              const idx =
+                assistantIndex >= 0 ? assistantIndex : Math.max(prev.length - 1, 0);
+              const next = [...prev];
+              const target = next[idx] ?? { role: "assistant", content: "" };
+              next[idx] = {
+                ...target,
+                content: (target.content ?? "") + token,
+              };
+              return next;
+            });
           },
-        ]);
+          onDone: ({ conversationId }) => {
+            resolvedConversationId = conversationId;
+          },
+        });
 
-        // If this was a new conversation, update currentId
-        if (!currentId && resp.conversationId) {
-          setCurrentId(resp.conversationId);
+        if (!currentId && resolvedConversationId) {
+          setCurrentId(resolvedConversationId);
         }
         // Refresh sidebar
-        refreshConversations();
-        return resp.conversationId;
+        await refreshConversations();
+        return resolvedConversationId;
       } catch (err) {
-        // Remove the optimistic user message on failure
-        setMessages((prev) => prev.slice(0, -1));
+        // Remove the optimistic user + assistant messages on failure
+        setMessages((prev) => prev.slice(0, -2));
         throw err;
       } finally {
         setSending(false);

@@ -18,9 +18,16 @@ interface Props {
 export default function MessageList({ messages, loading, sending }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const lastUserIndex = messages.reduce(
+    (idx, msg, i) => (msg.role === "user" ? i : idx),
+    -1,
+  );
+  const hasStreamingAssistant =
+    sending && messages[messages.length - 1]?.role === "assistant";
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, sending]);
+  }, [messages, sending]);
 
   if (loading) {
     return (
@@ -39,12 +46,21 @@ export default function MessageList({ messages, loading, sending }: Props) {
           key={i}
           className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
         >
+          {(() => {
+            const isPendingUser = sending && i === lastUserIndex && msg.role === "user";
+            const userClasses = isPendingUser
+              ? "bg-surface-white border border-border text-text-primary rounded-br-md whitespace-pre-wrap"
+              : "bg-brand-purple text-white rounded-br-md whitespace-pre-wrap";
+
+            const assistantClasses =
+              "bg-surface-white border border-border text-text-primary rounded-bl-md";
+
+            const bubbleClasses =
+              msg.role === "user" ? userClasses : assistantClasses;
+
+            return (
           <div
-            className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed font-primary ${
-              msg.role === "user"
-                ? "bg-brand-purple text-white rounded-br-md whitespace-pre-wrap"
-                : "bg-surface-white border border-border text-text-primary rounded-bl-md"
-            }`}
+            className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed font-primary ${bubbleClasses}`}
           >
             {msg.role === "user" ? (
               msg.content
@@ -82,9 +98,11 @@ export default function MessageList({ messages, loading, sending }: Props) {
               </ReactMarkdown>
             )}
           </div>
+            );
+          })()}
         </div>
       ))}
-      {sending && (
+      {sending && !hasStreamingAssistant && (
         <div className="flex justify-start">
           <div className="bg-surface-white border border-border rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary animate-bounce [animation-delay:0ms]" />

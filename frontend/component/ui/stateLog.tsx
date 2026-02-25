@@ -11,7 +11,7 @@ interface StateSection {
 
 function parseStateDoc(content: string): StateSection[] {
     // State doc from the backend is structured text.
-    // Parse lines grouped by headings (lines ending with :)
+    // Parse lines grouped by headings (markdown ## or colon format)
     const sections: StateSection[] = [];
     const lines = content.split("\n").filter((l) => l.trim());
 
@@ -19,16 +19,32 @@ function parseStateDoc(content: string): StateSection[] {
         project: "folder",
         stack: "layers",
         "current task": "target",
+        "current state": "target",
         "open questions": "help",
+        "open issues": "help",
         resolved: "check",
+        "active decisions": "check",
+        "technical context": "layers",
+        "recent focus": "target",
     };
 
     let current: StateSection | null = null;
     for (const line of lines) {
         const trimmed = line.trim();
-        // Detect headings: lines that end with ":" and aren't bullet points
-        if (trimmed.endsWith(":") && !trimmed.startsWith("-") && !trimmed.startsWith("*")) {
-            const heading = trimmed.slice(0, -1).trim();
+        // Detect markdown headings (## Heading) or colon headings (Heading:)
+        const isMarkdownHeading = trimmed.startsWith("##");
+        const isColonHeading = trimmed.endsWith(":") && !trimmed.startsWith("-") && !trimmed.startsWith("*");
+        
+        if (isMarkdownHeading || isColonHeading) {
+            let heading: string;
+            if (isMarkdownHeading) {
+                // Remove ## and trim
+                heading = trimmed.replace(/^##+\s*/, "").trim();
+            } else {
+                // Remove colon
+                heading = trimmed.slice(0, -1).trim();
+            }
+            
             current = {
                 heading,
                 icon: iconMap[heading.toLowerCase()] ?? "folder",
@@ -36,8 +52,21 @@ function parseStateDoc(content: string): StateSection[] {
             };
             sections.push(current);
         } else if (current) {
-            const item = trimmed.replace(/^[-*]\s*/, "");
-            if (item) current.items.push(item);
+            // Handle both bullet points and plain text
+            if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+                // Bullet point
+                const item = trimmed.replace(/^[-*]\s*/, "");
+                // Filter out "None" entries
+                if (item && item.toLowerCase() !== "none") {
+                    current.items.push(item);
+                }
+            } else if (trimmed) {
+                // Plain text (like "We are building..." or "None")
+                // Only add if it's not just "None" or empty
+                if (trimmed.toLowerCase() !== "none") {
+                    current.items.push(trimmed);
+                }
+            }
         }
     }
     return sections;
@@ -81,8 +110,13 @@ const headingStyles: Record<string, string> = {
     "Project": "text-text-secondary bg-page-bg border-border",
     "Stack": "text-text-secondary bg-page-bg border-border",
     "Current Task": "text-brand-purple bg-brand-purple-light border-brand-purple/15",
+    "Current State": "text-brand-purple bg-brand-purple-light border-brand-purple/15",
     "Open Questions": "text-text-secondary bg-page-bg border-border",
+    "Open Issues": "text-text-secondary bg-page-bg border-border",
     "Resolved": "text-text-secondary bg-page-bg border-border",
+    "Active Decisions": "text-text-secondary bg-page-bg border-border",
+    "Technical Context": "text-text-secondary bg-page-bg border-border",
+    "Recent Focus": "text-text-secondary bg-page-bg border-border",
 };
 
 interface Props {

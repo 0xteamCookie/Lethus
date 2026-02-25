@@ -159,11 +159,9 @@ export async function embed(text: string): Promise<number[]> {
   });
 }
 
-// upstream proxy
-// forwards the actual user request to the upstream llm
+// upstream proxy (non‑streaming)
+// forwards the actual user request to the upstream llm with stream: false
 // this is not gpt-4o-mini it's whatever the user configured
-//
-// we stream the response back to the user.
 export async function callUpstream(
   body: Record<string, unknown>,
 ): Promise<{ content: string; inputTokens: number; outputTokens: number }> {
@@ -195,4 +193,31 @@ export async function callUpstream(
   const outputTokens = data.usage?.completion_tokens ?? 0;
 
   return { content, inputTokens, outputTokens };
+}
+
+// upstream proxy (streaming)
+// forwards the actual user request to the upstream llm with stream: true
+// returns the raw Response so callers can consume the SSE stream.
+export async function callUpstreamStreaming(
+  body: Record<string, unknown>,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS * 4);
+
+  const response = await fetch(config.upstreamUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.upstreamKey}`,
+    },
+    body: JSON.stringify({ ...body, stream: true }),
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Upstream LLM error ${response.status}: ${errorBody}`);
+  }
+
+  return response;
 }
