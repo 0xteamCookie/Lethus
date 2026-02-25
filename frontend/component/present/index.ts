@@ -7,3 +7,4 @@ export { default as ComparisonSlide } from "./ComparisonSlide";
 export { default as ImpactSlide } from "./ImpactSlide";
 export { default as OurSolutionSlide } from "./OurSolutionSlide";
 export { default as IntentSlide } from "./IntentSlide";
+export { default as ZNormSlide } from "./ZNormSlide";
