@@ -144,28 +144,12 @@ async function detectAndMarkSuperseded(
   if (activeDecisions.length === 0) return;
 
   for (const updateEntry of updateEntries) {
-    const stopwords = new Set([
-      "the", "a", "an", "is", "was", "are", "were", "been", "be",
-      "have", "has", "had", "do", "does", "did", "will", "would",
-      "could", "should", "may", "might", "shall", "can",
-      "to", "for", "of", "in", "on", "at", "by", "with",
-      "and", "or", "but", "not", "no", "nor",
-      "this", "that", "these", "those", "it", "its",
-      "from", "into", "about", "than", "then", "also",
-      "just", "more", "some", "such", "only", "very",
-      "what", "which", "who", "whom", "how", "when", "where", "why",
-      "each", "every", "both", "few", "many", "most", "other",
-      "over", "under", "again", "further", "once",
-      "here", "there", "all", "any", "same",
-      "need", "needs", "needed", "using", "used", "use",
-    ]);
-
     const extractWords = (text: string) =>
       new Set(
         text
           .toLowerCase()
           .split(/\W+/)
-          .filter((w) => w.length > 3 && !stopwords.has(w)),
+          .filter((w) => w.length > 3),
       );
 
     const updateWords = extractWords(updateEntry.content);
@@ -175,8 +159,8 @@ async function detectAndMarkSuperseded(
 
       const intersection = [...updateWords].filter((w) => decisionWords.has(w));
 
-      // Require 3+ significant non-stopword overlap to supersede
-      if (intersection.length >= 3) {
+      // If 2+ significant words overlap, treat as superseded
+      if (intersection.length >= 2) {
         await prisma.changelogEntry.update({
           where: { id: decision.id },
           data: { supersededBy: turnNumber },
