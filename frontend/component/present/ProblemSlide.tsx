@@ -32,9 +32,7 @@ const historyTokens = newTokensEach.reduce<number[]>((a, t) => {
 }, []);
 // e.g. step 1 → 360+38=398, step 2 → 434, ..., step 5 → 550
 
-const obsolete = new Set([2, 3]); // T3, T4 obsolete after MongoDB switch
 const ragScores = [0.12, 0.08, 0.72, 0.45, 0.94, 0.81, 0.05, 0.04, 0.11, 0.09];
-const ragHits = new Set([2, 4, 5]); // T3, T5, T6
 
 type Mode = "history" | "summary" | "rag";
 
@@ -130,26 +128,14 @@ function Badge({ text, warn }: { text: string; warn?: boolean }) {
 const ProblemSlide = () => {
     const [mode, setMode] = useState<Mode>("history");
     const [step, setStep] = useState(0);
-    const [playing, setPlaying] = useState(false);
-    const timer = useRef<ReturnType<typeof setInterval> | null>(null);
     const leftRef = useRef<HTMLDivElement>(null);
     const rightRef = useRef<HTMLDivElement>(null);
 
-    const max = mode === "history" ? newRequests.length : 5;
-    const spd = mode === "history" ? 900 : 1100;
+    const max = mode === "history" ? newRequests.length : 3;
 
-    const play = () => { if (step >= max) setStep(0); setPlaying(true); };
-    const pause = () => { setPlaying(false); if (timer.current) clearInterval(timer.current); };
-    const reset = () => { pause(); setStep(0); };
-    const pick = (m: Mode) => { pause(); setMode(m); setStep(0); };
-
-    useEffect(() => {
-        if (!playing) return;
-        timer.current = setInterval(() => {
-            setStep(p => { if (p >= max) { setPlaying(false); return max; } return p + 1; });
-        }, spd);
-        return () => { if (timer.current) clearInterval(timer.current); };
-    }, [playing, max, spd]);
+    const next = () => { if (step < max) setStep(s => s + 1); };
+    const reset = () => { setStep(0); };
+    const pick = (m: Mode) => { setMode(m); setStep(0); };
 
     useEffect(() => {
         leftRef.current?.scrollTo({ top: leftRef.current.scrollHeight, behavior: "smooth" });
@@ -162,8 +148,8 @@ const ProblemSlide = () => {
     /* ── right-panel per mode ── */
     const rightBadge = (): { text: string; color: string } | undefined => {
         if (mode === "history" && step > 0) return { text: `${historyTokens[step - 1]} tokens`, color: tc(historyTokens[step - 1]) };
-        if (mode === "summary" && step >= 3) return { text: "~40 tokens · LOSSY", color: "amber" };
-        if (mode === "rag" && step >= 4) return { text: "FRAGMENTED", color: "amber" };
+        if (mode === "summary" && step >= 1) return { text: "~40 tokens · LOSSY", color: "amber" };
+        if (mode === "rag" && step >= 1) return { text: "FRAGMENTED", color: "amber" };
         return undefined;
     };
 
@@ -177,20 +163,17 @@ const ProblemSlide = () => {
                             }`}>{m.icon} {m.label}</button>
                 ))}
                 <div className="flex items-center gap-2 ml-auto">
-                    <button onClick={playing ? pause : play}
+                    <button onClick={step >= max ? reset : next}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer bg-gray-900 border-gray-900 text-white hover:bg-gray-800 transition-all duration-200">
-                        {playing ? "⏸ Pause" : step >= max ? "↻ Replay" : "▶ Play"}
+                        {step >= max ? "↻ Reset" : "Next Step →"}
                     </button>
                     <button onClick={reset}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50 transition-all duration-200">
                         Reset
                     </button>
                     <div className="h-1.5 w-24 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-300"
-                            style={{
-                                width: `${(step / max) * 100}%`,
-                                background: mode === "history" && step > 0 ? (historyTokens[step - 1] > 480 ? "#ef4444" : historyTokens[step - 1] > 400 ? "#f59e0b" : "#6366f1") : "#6366f1",
-                            }} />
+                        <div className="h-full rounded-full transition-all duration-300 bg-indigo-500"
+                            style={{ width: `${(step / max) * 100}%` }} />
                     </div>
                     <span className="text-[11px] text-gray-400 font-mono tabular-nums">{step}/{max}</span>
                 </div>
@@ -202,12 +185,12 @@ const ProblemSlide = () => {
                 <PanelShell title="conversation.log" innerRef={leftRef}>
                     {/* Base conversation — always visible in all modes */}
                     {convo.map((_, i) => (
-                        <Msg key={i} i={i} score={mode === "rag" && step >= 3 ? ragScores[i] : undefined} />
+                        <Msg key={i} i={i} score={mode === "rag" && step >= 2 ? ragScores[i] : undefined} />
                     ))}
                     {/* History: play hint + new messages */}
                     {mode === "history" && step === 0 && (
                         <div className="text-center text-gray-300 text-[11px] mt-2 py-2 border-t border-dashed border-gray-200">
-                            ▶ Press Play — new requests will resend this entire history
+                            Press Next Step — new requests will resend this entire history
                         </div>
                     )}
                     {mode === "history" && step > 0 && (
@@ -238,11 +221,16 @@ const ProblemSlide = () => {
                             </div>
                         );
                     })}
-                    {/* RAG query banner */}
-                    {mode === "rag" && step >= 1 && (
-                        <div className="border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2 mt-2">
-                            <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Query</span>
-                            <p className="text-indigo-700 text-[12px] font-medium mt-0.5">Why does the API use MongoDB instead of PostgreSQL?</p>
+                    {/* Summary / RAG: new user message appears on step 1 */}
+                    {(mode === "summary" || mode === "rag") && step >= 1 && (
+                        <div className="flex gap-2.5 flex-row-reverse mt-2" style={{ animation: step === 1 ? "fadeSlideIn 0.3s ease-out" : undefined }}>
+                            <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 bg-indigo-100 text-indigo-600">U</div>
+                            <div className="flex flex-col gap-0.5 min-w-0 items-end" style={{ maxWidth: "85%" }}>
+                                <span className="text-[11px] font-semibold text-indigo-500">You</span>
+                                <div className="text-[13px] leading-relaxed px-3 py-2 rounded-xl bg-indigo-50 text-gray-700 rounded-tr-sm">
+                                    Why did we switch from PostgreSQL to MongoDB?
+                                </div>
+                            </div>
                         </div>
                     )}
                 </PanelShell>
@@ -257,13 +245,9 @@ const ProblemSlide = () => {
                         <div className="flex flex-col gap-1">
                             {/* All base messages resent */}
                             {convo.map((m, i) => (
-                                <div key={i} className={`text-[12px] leading-snug py-0.5 pl-2 border-l-2 transition-all duration-300 ${obsolete.has(i)
-                                        ? "border-red-300 text-gray-300 line-through"
-                                        : "border-gray-200 text-gray-400"
-                                    }`}>
+                                <div key={i} className="text-[12px] leading-snug py-0.5 pl-2 border-l-2 border-gray-200 text-gray-400">
                                     <span className="font-mono text-gray-300 text-[9px] mr-1">{m.id}</span>
                                     {m.text}
-                                    {obsolete.has(i) && <span className="text-red-400 text-[9px] ml-1">OBSOLETE</span>}
                                 </div>
                             ))}
                             {/* New messages also sent */}
@@ -282,10 +266,10 @@ const ProblemSlide = () => {
                                     <div className="h-full rounded-full transition-all duration-500"
                                         style={{
                                             width: `${(historyTokens[step - 1] / 600) * 100}%`,
-                                            background: historyTokens[step - 1] > 480 ? "#ef4444" : historyTokens[step - 1] > 400 ? "#f59e0b" : "#22c55e",
+                                            background: step >= max ? "#ef4444" : "#6366f1",
                                         }} />
                                 </div>
-                                <span className={`text-[10px] font-mono font-bold tabular-nums ${historyTokens[step - 1] > 480 ? "text-red-500" : historyTokens[step - 1] > 400 ? "text-amber-600" : "text-emerald-500"}`}>
+                                <span className={`text-[10px] font-mono font-bold tabular-nums ${step >= max ? "text-red-500" : "text-indigo-500"}`}>
                                     {historyTokens[step - 1]} tok
                                 </span>
                             </div>
@@ -293,19 +277,8 @@ const ProblemSlide = () => {
                     )}
 
                     {/* ── SUMMARIZATION ── */}
-                    {mode === "summary" && step === 0 && <Empty>Waiting...</Empty>}
-                    {mode === "summary" && step >= 1 && step < 3 && (
-                        <div className="flex flex-col items-center justify-center gap-3 min-h-[120px] text-gray-400">
-                            <div className="text-2xl animate-bounce">📝</div>
-                            <span className="text-[12px] font-medium">Processing {convo.length} messages...</span>
-                            <div className="flex gap-1">
-                                {[0, 1, 2].map(d => (
-                                    <div key={d} className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse" />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {mode === "summary" && step >= 3 && (
+                    {mode === "summary" && step === 0 && <Empty>Press Next Step...</Empty>}
+                    {mode === "summary" && step >= 1 && (
                         <div className="flex flex-col gap-3" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
                             <div>
                                 <Badge text="Compressed summary" />
@@ -314,7 +287,7 @@ const ProblemSlide = () => {
                                 </p>
                                 <div className="text-[10px] text-emerald-500 font-mono mt-1">~40 tokens</div>
                             </div>
-                            {step >= 4 && (
+                            {step >= 2 && (
                                 <div style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
                                     <Badge text="Details permanently lost" warn />
                                     <div className="flex flex-col gap-1.5 mt-1">
@@ -332,25 +305,20 @@ const ProblemSlide = () => {
                                     </div>
                                 </div>
                             )}
+                            {step >= 3 && (
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2" style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">LLM Response</span>
+                                    <p className="text-[12px] text-gray-600 leading-relaxed mt-1 italic">
+                                        &quot;The project uses MongoDB for the database.&quot; — No reasoning or context about the switch available.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* ── RAG ── */}
-                    {mode === "rag" && step === 0 && <Empty>Waiting...</Empty>}
-                    {mode === "rag" && step >= 1 && step < 3 && (
-                        <div className="flex flex-col items-center justify-center gap-3 min-h-[120px] text-gray-400">
-                            <div className="text-2xl animate-bounce">🔍</div>
-                            <span className="text-[12px] font-medium">
-                                {step === 1 ? "Embedding query..." : "Searching vector DB..."}
-                            </span>
-                            <div className="flex gap-1">
-                                {[0, 1, 2].map(d => (
-                                    <div key={d} className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse" />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {mode === "rag" && step >= 3 && (
+                    {mode === "rag" && step === 0 && <Empty>Press Next Step...</Empty>}
+                    {mode === "rag" && step >= 1 && (
                         <div className="flex flex-col gap-3" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
                             <div>
                                 <Badge text="Top-3 retrieved chunks" />
@@ -366,7 +334,7 @@ const ProblemSlide = () => {
                                     ))}
                                 </div>
                             </div>
-                            {step >= 4 && (
+                            {step >= 2 && (
                                 <div style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
                                     <Badge text="Missing context" warn />
                                     <div className="flex flex-col gap-1.5 mt-1">
