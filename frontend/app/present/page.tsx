@@ -8,6 +8,7 @@ import {
   ImpactSlide,
   OurSolutionSlide,
   IntentSlide,
+  ZNormSlide,
 } from "@/component/present";
 
 const slides = [
@@ -18,6 +19,7 @@ const slides = [
   { tag: "IMPACT & VISION", title: "Pay for Signal, Not Tokens", hook: "" },
   { tag: "OUR SOLUTION", title: "Live State Tracking in Action", hook: "Watch how Lethus builds a structured state document from a 20-turn conversation, in real time." },
   { tag: "INTENT", title: "Smart Intent Classification", hook: "Different messages need different retrieval strategies. Lethus classifies intent first, then fetches only what is needed." },
+  { tag: "Z-NORMALIZATION", title: "Scoring and Filtering with Z-Normalization", hook: "Cosine similarity scores are Z-normalized so irrelevant chunks drop below zero and get discarded automatically." },
 ];
 
 export default function Present() {
@@ -109,6 +111,7 @@ export default function Present() {
             {current === 4 && <ImpactSlide />}
             {current === 5 && <OurSolutionSlide />}
             {current === 6 && <IntentSlide />}
+            {current === 7 && <ZNormSlide />}
           </div>
         </main>
 
