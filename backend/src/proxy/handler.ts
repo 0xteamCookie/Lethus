@@ -33,6 +33,8 @@ import { getTurnCount, ensureConversation } from "../services/turnStorage";
 import { scheduleWriteback } from "../services/writeback";
 import type { ProxyRequest, ChatMessage } from "../types";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function handleChatCompletion(
   req: Request,
   res: Response,
@@ -64,13 +66,27 @@ export async function handleChatCompletion(
     }
 
     // ── Extract Conversation ID ─────────────────────────────
-    // Check X-Lethus-Conversation-Id header first.
-    // Fall back to generating a new UUID.
-    const conversationId =
-      (req.headers["x-lethus-conversation-id"] as string) ?? randomUUID();
+    const rawConversationId = req.headers["x-lethus-conversation-id"] as
+      | string
+      | undefined;
+    const conversationId = rawConversationId ?? randomUUID();
+
+    if (!UUID_RE.test(conversationId)) {
+      res.status(400).json({
+        error: {
+          message:
+            "X-Lethus-Conversation-Id must be a valid UUID",
+          type: "invalid_request_error",
+        },
+      });
+      return;
+    }
+
+    // ── Extract Browser ID ────────────────────────────
+    const browserId = (req.headers["x-lethus-browser-id"] as string) ?? null;
 
     // Ensure the conversation record exists in PostgreSQL
-    await ensureConversation(conversationId);
+    await ensureConversation(conversationId, browserId);
 
     // ── Extract Message Parts ───────────────────────────────
     // Split the incoming messages into:

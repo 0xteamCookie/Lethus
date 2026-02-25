@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { config } from "./config";
 import { prisma } from "./db/prisma";
 import { milvus, ensureMilvusCollection } from "./db/milvus";
@@ -7,7 +8,17 @@ import { handleChatCompletion } from "./proxy/handler";
 const app = express();
 
 // ── Middleware ───────────────────────────────────────────────
-// Parse JSON bodies. Limit to 10MB to handle large conversation payloads.
+app.use(
+  cors({
+    origin: config.corsOrigins,
+    exposedHeaders: [
+      "X-Lethus-Conversation-Id",
+      "X-Lethus-Reduction-Percent",
+      "X-Lethus-Intent",
+      "X-Lethus-Processing-Ms",
+    ],
+  }),
+);
 app.use(express.json({ limit: "10mb" }));
 
 // ── Health Check ─────────────────────────────────────────────
@@ -31,7 +42,6 @@ app.get("/health", async (_req, res) => {
 });
 
 // ── Observability Endpoint ────────────────────────────────────
-// Returns conversation metadata — useful for the demo dashboard.
 app.get("/conversations/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -59,6 +69,132 @@ app.get("/conversations/:id", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch conversation" });
+  }
+});
+
+// ── List Conversations ────────────────────────────────────────
+app.get("/conversations", async (req, res) => {
+  try {
+    const browserId = req.headers["x-lethus-browser-id"] as string | undefined;
+
+    const where = browserId ? { browserId } : {};
+    const conversations = await prisma.conversation.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        turns: {
+          orderBy: { turnNumber: "desc" },
+          take: 1,
+          select: { content: true, role: true },
+        },
+        _count: { select: { turns: true } },
+      },
+    });
+
+    res.json(
+      conversations.map((c) => ({
+        id: c.id,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        turnCount: Math.floor(c._count.turns / 2),
+        lastMessage: c.turns[0]?.content?.slice(0, 100) ?? null,
+      })),
+    );
+  } catch (error) {
+    res.status(500).json({ error: "Failed to list conversations" });
+  }
+});
+
+// ── Conversation Turns ────────────────────────────────────────
+app.get("/conversations/:id/turns", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const before = Number(req.query.before) || undefined;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+    });
+    if (!conversation) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+
+    const turns = await prisma.turn.findMany({
+      where: {
+        conversationId: id,
+        ...(before ? { turnNumber: { lt: before } } : {}),
+      },
+      orderBy: { turnNumber: "asc" },
+      take: limit,
+    });
+
+    res.json(turns);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch turns" });
+  }
+});
+
+// ── Conversation Changelog ────────────────────────────────────
+app.get("/conversations/:id/changelog", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+    });
+    if (!conversation) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+
+    const entries = await prisma.changelogEntry.findMany({
+      where: { conversationId: id, supersededBy: null },
+      orderBy: { turnNumber: "asc" },
+    });
+
+    res.json(entries);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch changelog" });
+  }
+});
+
+// ── Conversation State Doc ────────────────────────────────────
+app.get("/conversations/:id/state", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const stateDoc = await prisma.stateDoc.findUnique({
+      where: { conversationId: id },
+    });
+
+    res.json({
+      content: stateDoc?.content ?? null,
+      version: stateDoc?.version ?? 0,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch state doc" });
+  }
+});
+
+// ── Delete Conversation ───────────────────────────────────────
+app.delete("/conversations/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+    });
+    if (!conversation) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+
+    await prisma.conversation.delete({ where: { id } });
+
+    res.json({ deleted: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete conversation" });
   }
 });
 
