@@ -22,11 +22,14 @@
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "@zilliz/milvus2-sdk-node": "^2.6.10",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "gpt-tokenizer": "^3.4.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "prisma": "^7.4.1",
     "ts-node": "^10.9.2",

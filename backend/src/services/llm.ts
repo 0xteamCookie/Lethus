@@ -7,7 +7,10 @@
 // retrying 3 times with exponential backoff
 
 import { config } from "../config";
+import { truncateToTokens } from "./tokenizer";
 import type { ChatMessage } from "../types";
+
+const LLM_TIMEOUT_MS = 30_000;
 
 async function withRetry<T>(
   fn: () => Promise<T>,
@@ -74,6 +77,9 @@ export async function chat(
       body.response_format = { type: "json_object" };
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -81,7 +87,8 @@ export async function chat(
         Authorization: `Bearer ${config.openaiKey}`,
       },
       body: JSON.stringify(body),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
 
     if (!response.ok) {
       const errorBody = await response.text();
@@ -111,9 +118,11 @@ export async function chat(
 
 export async function embed(text: string): Promise<number[]> {
   return withRetry(async () => {
-    // truncate text to stay well within token limits. 8191 token model limit so if 1 token = 4 chars.
-    // 8000 tokens * 4 chars = 32000 chars max
-    const truncated = text.slice(0, 32000);
+    // text-embedding-3-small has an 8191 token limit; truncate to 8000 for safety
+    const truncated = truncateToTokens(text, 8000);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
     const response = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
@@ -122,11 +131,12 @@ export async function embed(text: string): Promise<number[]> {
         Authorization: `Bearer ${config.openaiKey}`,
       },
       body: JSON.stringify({
-        model: config.embeddingModel, // "text-embedding-3-small"
+        model: config.embeddingModel,
         input: truncated,
-        encoding_format: "float", // Returns raw floats, not base64
+        encoding_format: "float",
       }),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
 
     if (!response.ok) {
       const errorBody = await response.text();
@@ -157,6 +167,9 @@ export async function embed(text: string): Promise<number[]> {
 export async function callUpstream(
   body: Record<string, unknown>,
 ): Promise<{ content: string; inputTokens: number; outputTokens: number }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS * 4);
+
   const response = await fetch(config.upstreamUrl, {
     method: "POST",
     headers: {
@@ -164,7 +177,8 @@ export async function callUpstream(
       Authorization: `Bearer ${config.upstreamKey}`,
     },
     body: JSON.stringify({ ...body, stream: false }),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
 
   if (!response.ok) {
     const errorBody = await response.text();

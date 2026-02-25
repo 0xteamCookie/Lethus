@@ -9,6 +9,7 @@ datasource db {
 
 model Conversation {
   id        String   @id @default(uuid())
+  browserId String?  @map("browser_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -16,6 +17,7 @@ model Conversation {
   changelogEntries ChangelogEntry[]
   stateDoc         StateDoc?
 
+  @@index([browserId])
   @@map("conversations")
 }
 

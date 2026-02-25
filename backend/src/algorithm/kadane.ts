@@ -93,8 +93,9 @@ export function findBestSpans(
 ): KadaneSpan[] {
   if (boostedScores.length === 0) return [];
 
+  const scoredTurnNumbers = new Set(boostedScores.map((s) => s.turnNumber));
+
   // Convert boostedScore to gain by subtracting theta
-  // gain > 0: worth including; gain < 0: not worth including
   const gainByTurnNumber = new Map<number, number>(
     boostedScores.map(({ turnNumber, boostedScore }) => [
       turnNumber,
@@ -102,22 +103,43 @@ export function findBestSpans(
     ]),
   );
 
-  // Sort turn numbers for contiguous span detection
-  const sortedTurnNumbers = boostedScores
-    .map((s) => s.turnNumber)
-    .sort((a, b) => a - b);
+  // Build a fully contiguous turn number sequence, filling gaps
+  // with penalty entries so Kadane naturally avoids crossing gaps.
+  const sortedScored = [...scoredTurnNumbers].sort((a, b) => a - b);
+  const minTurn = sortedScored[0];
+  const maxTurn = sortedScored[sortedScored.length - 1];
+
+  const contiguousTurnNumbers: number[] = [];
+  for (let t = minTurn; t <= maxTurn; t++) {
+    contiguousTurnNumbers.push(t);
+    if (!gainByTurnNumber.has(t)) {
+      // Gap turn: assign penalty cost so spanning it is expensive
+      gainByTurnNumber.set(t, -config.kadaneTheta);
+    }
+  }
 
   const spans: KadaneSpan[] = [];
 
-  // Working copy of gains — we zero out found spans
+  // Working copy of gains -- we zero out found spans
   const workingGains = new Map(gainByTurnNumber);
 
   for (let spanIndex = 0; spanIndex < maxSpans; spanIndex++) {
-    const span = findBestSpan(workingGains, sortedTurnNumbers);
+    const span = findBestSpan(workingGains, contiguousTurnNumbers);
 
     if (!span) break; // No more positive spans
 
-    spans.push(span);
+    // Filter out synthetic gap turns from the span result
+    const realTurnNumbers = span.turnNumbers.filter((t) =>
+      scoredTurnNumbers.has(t),
+    );
+    if (realTurnNumbers.length === 0) break;
+
+    spans.push({
+      startTurn: realTurnNumbers[0],
+      endTurn: realTurnNumbers[realTurnNumbers.length - 1],
+      totalGain: span.totalGain,
+      turnNumbers: realTurnNumbers,
+    });
 
     // Zero out this span so next iteration finds a different one
     for (const turnNumber of span.turnNumbers) {

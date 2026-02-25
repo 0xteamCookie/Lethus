@@ -1,43 +1,47 @@
 "use client";
 
-const stateLog: { heading: string; icon: string; items: string[] }[] = [
-    {
-        heading: "Project",
-        icon: "folder",
-        items: ["E-commerce backend"],
-    },
-    {
-        heading: "Stack",
-        icon: "layers",
-        items: [
-            "Runtime: Node + Express",
-            "DB: MongoDB",
-            "Auth: JWT",
-            "Payments: PayPal",
-            "Cache: Redis (just added)",
-        ],
-    },
-    {
-        heading: "Current Task",
-        icon: "target",
-        items: ["Adding Redis for search caching"],
-    },
-    {
-        heading: "Open Questions",
-        icon: "help",
-        items: ["Redis implementation details not decided yet"],
-    },
-    {
-        heading: "Resolved",
-        icon: "check",
-        items: [
-            "Switched PostgreSQL → MongoDB at T5 (flexible data)",
-            "Switched Stripe → PayPal at T14 (too many fees)",
-            "Fixed orders 500 error at T10 (missing await)",
-            "Added product name index at T13 (search too slow)",
-        ],
-    },
-];
+import { useState, useEffect } from "react";
+import { getStateDoc } from "@/lib/api";
+
+interface StateSection {
+    heading: string;
+    icon: string;
+    items: string[];
+}
+
+function parseStateDoc(content: string): StateSection[] {
+    // State doc from the backend is structured text.
+    // Parse lines grouped by headings (lines ending with :)
+    const sections: StateSection[] = [];
+    const lines = content.split("\n").filter((l) => l.trim());
+
+    const iconMap: Record<string, string> = {
+        project: "folder",
+        stack: "layers",
+        "current task": "target",
+        "open questions": "help",
+        resolved: "check",
+    };
+
+    let current: StateSection | null = null;
+    for (const line of lines) {
+        const trimmed = line.trim();
+        // Detect headings: lines that end with ":" and aren't bullet points
+        if (trimmed.endsWith(":") && !trimmed.startsWith("-") && !trimmed.startsWith("*")) {
+            const heading = trimmed.slice(0, -1).trim();
+            current = {
+                heading,
+                icon: iconMap[heading.toLowerCase()] ?? "folder",
+                items: [],
+            };
+            sections.push(current);
+        } else if (current) {
+            const item = trimmed.replace(/^[-*]\s*/, "");
+            if (item) current.items.push(item);
+        }
+    }
+    return sections;
+}
 
 const sectionIcons: Record<string, React.ReactNode> = {
     folder: (
@@ -84,9 +88,23 @@ const headingStyles: Record<string, string> = {
 interface Props {
     open: boolean;
     onToggle: () => void;
+    conversationId: string | null;
 }
 
-export default function StateLogSection({ open, onToggle }: Props) {
+export default function StateLogSection({ open, onToggle, conversationId }: Props) {
+    const [stateLog, setStateLog] = useState<StateSection[]>([]);
+
+    useEffect(() => {
+        if (!conversationId) {
+            setStateLog([]);
+            return;
+        }
+        getStateDoc(conversationId).then((doc) => {
+            if (doc.content) setStateLog(parseStateDoc(doc.content));
+            else setStateLog([]);
+        }).catch(() => setStateLog([]));
+    }, [conversationId]);
+
     return (
         <div className="rounded-xl border border-border overflow-hidden">
             <button
@@ -117,18 +135,22 @@ export default function StateLogSection({ open, onToggle }: Props) {
                 </svg>
             </button>
 
-            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-[800px]" : "max-h-0"}`}>
+            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${open ? "max-h-200" : "max-h-0"}`}>
                 <div className="px-3 pb-3 flex flex-col gap-2.5 bg-surface-white border-t border-border-subtle">
-                    {stateLog.map((section) => (
+                    {stateLog.length === 0 ? (
+                        <p className="text-[12px] text-text-tertiary italic py-3 text-center">
+                            {conversationId ? "No state doc yet" : "Select a conversation"}
+                        </p>
+                    ) : stateLog.map((section) => (
                         <div key={section.heading} className="flex flex-col gap-1 pt-2 first:pt-1.5">
-                            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border w-fit ${headingStyles[section.heading]}`}>
+                            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border w-fit ${headingStyles[section.heading] ?? "text-text-secondary bg-page-bg border-border"}`}>
                                 {sectionIcons[section.icon]}
                                 {section.heading}
                             </div>
                             <div className="flex flex-col gap-px ml-0.5">
                                 {section.items.map((item, i) => (
                                     <div key={i} className="flex items-start gap-2 py-0.5 px-2">
-                                        <span className="w-1 h-1 rounded-full bg-text-tertiary shrink-0 mt-[6px]" />
+                                        <span className="w-1 h-1 rounded-full bg-text-tertiary shrink-0 mt-1.5" />
                                         <span className="text-[12px] text-text-secondary leading-relaxed">
                                             {item}
                                         </span>

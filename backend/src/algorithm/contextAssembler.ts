@@ -192,7 +192,11 @@ export async function assembleContext(
     params: { nprobe: 16 }, // Search 16 clusters (more = accurate but slower)
   });
 
-  const searchHits = searchResult.results ?? [];
+  const searchHits = (searchResult.results ?? []).flat() as unknown as Array<{
+    id: string;
+    score: number;
+    turn_number?: number;
+  }>;
 
   if (searchHits.length === 0) {
     // No results from Milvus — fall back to recent turns
@@ -214,12 +218,10 @@ export async function assembleContext(
   }
 
   // Step 3: Extract scores from Milvus results
-  const rawScores = searchHits.map(
-    (hit: { id: string; score: number; turn_number?: number }) => ({
-      turnNumber: Number(hit.turn_number ?? hit.id.split("_")[1]),
-      score: hit.score,
-    }),
-  );
+  const rawScores = searchHits.map((hit) => ({
+    turnNumber: Number(hit.turn_number ?? hit.id.split("_")[1]),
+    score: hit.score,
+  }));
 
   // Step 4: Z-score normalize
   const normalized = zScoreNormalize(rawScores);

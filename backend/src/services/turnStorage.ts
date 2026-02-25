@@ -29,11 +29,12 @@ import type { StoredTurn } from "../types";
 
 export async function ensureConversation(
   conversationId: string,
+  browserId?: string | null,
 ): Promise<void> {
   await prisma.conversation.upsert({
     where: { id: conversationId },
-    create: { id: conversationId },
-    update: {}, // Do nothing if it already exists
+    create: { id: conversationId, ...(browserId ? { browserId } : {}) },
+    update: browserId ? { browserId } : {},
   });
 }
 

@@ -44,7 +44,14 @@ export const config = {
   upstreamKey: requireEnv("UPSTREAM_LLM_KEY"),
 
   // Server
-  port: numericEnv("PORT", 3000),
+  port: numericEnv("PORT", 3001),
+
+  // CORS -- "*" allows all origins, otherwise comma-separated list
+  corsOrigins: (() => {
+    const raw = optionalEnv("CORS_ORIGINS", "http://localhost:3000");
+    if (raw === "*") return "*" as const;
+    return raw.split(",").map((s) => s.trim());
+  })(),
 
   // Embedding — text-embedding-3-small produces 1536-dimensional vectors.
   // This dimension must match the Milvus collection exactly.
