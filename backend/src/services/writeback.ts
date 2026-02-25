@@ -38,6 +38,7 @@ async function runWriteback(job: WritebackJob): Promise<void> {
     assistantResponse,
     userTokens,
     assistantTokens,
+    metadata,
   } = job;
 
   const startMs = Date.now();
@@ -55,6 +56,7 @@ async function runWriteback(job: WritebackJob): Promise<void> {
       turnNumber,
       userMessage,
       assistantResponse,
+      metadata,
     );
     console.log(
       `[Writeback] Stored turns for conversation ${conversationId} turn ${turnNumber}`,

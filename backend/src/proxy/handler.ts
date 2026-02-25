@@ -31,6 +31,7 @@ import {
 import { callUpstream, callUpstreamStreaming } from "../services/llm";
 import { getTurnCount, ensureConversation } from "../services/turnStorage";
 import { scheduleWriteback } from "../services/writeback";
+import { config } from "../config";
 import type { ProxyRequest, ChatMessage } from "../types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -140,6 +141,11 @@ export async function handleChatCompletion(
     // assembled messages. Pass all other params through (temperature, etc.)
     const { messages: _ignored, ...restBody } = body;
     void _ignored;
+
+    // Apply default max_tokens if not specified by client
+    if (!restBody.max_tokens) {
+      restBody.max_tokens = config.maxResponseTokens;
+    }
 
     // If the client requested streaming, proxy the upstream SSE stream.
     if (restBody.stream) {
@@ -251,6 +257,7 @@ export async function handleChatCompletion(
           assistantResponse: assistantContent,
           userTokens: 0,
           assistantTokens: 0,
+          metadata: retrieval.metadata,
         });
       }
     } else {
@@ -316,6 +323,7 @@ export async function handleChatCompletion(
         assistantResponse: content,
         userTokens: inputTokens,
         assistantTokens: outputTokens,
+        metadata: retrieval.metadata,
       });
     }
   } catch (error) {

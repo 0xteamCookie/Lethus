@@ -71,6 +71,9 @@ export const config = {
   gainShift: numericEnv("GAIN_SHIFT", 0.6),
   changelogBoost: numericEnv("CHANGELOG_BOOST", 1.0),
   changelogNeighborBoost: numericEnv("CHANGELOG_NEIGHBOR_BOOST", 0.3),
+
+  // LLM response limits
+  maxResponseTokens: numericEnv("MAX_RESPONSE_TOKENS", 800),
 } as const;
 
 // Freeze to prevent accidental mutation at runtime

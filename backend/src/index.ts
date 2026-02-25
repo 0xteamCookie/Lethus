@@ -129,7 +129,38 @@ app.get("/conversations/:id/turns", async (req, res) => {
       take: limit,
     });
 
-    res.json(turns);
+    // Transform metadata from camelCase (backend) to snake_case (frontend)
+    const transformedTurns = turns.map((turn) => {
+      if (!turn.metadata || typeof turn.metadata !== "object") {
+        return turn;
+      }
+
+      const meta = turn.metadata as {
+        originalTokenCount?: number;
+        retrievedTokenCount?: number;
+        reductionPercent?: number;
+        spansSelected?: Array<{ start: number; end: number }>;
+        changelogEntriesUsed?: number;
+        processingMs?: number;
+        intent?: string;
+        totalTurns?: number;
+      };
+
+      return {
+        ...turn,
+        metadata: {
+          original_tokens: meta.originalTokenCount ?? 0,
+          retrieved_tokens: meta.retrievedTokenCount ?? 0,
+          reduction_percent: meta.reductionPercent ?? 0,
+          spans_selected: meta.spansSelected ?? [],
+          changelog_entries_used: meta.changelogEntriesUsed ?? 0,
+          processing_ms: meta.processingMs ?? 0,
+          intent: meta.intent ?? "UNKNOWN",
+        },
+      };
+    });
+
+    res.json(transformedTurns);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch turns" });
   }

@@ -16,6 +16,7 @@ export interface StoredTurn {
   role: "user" | "assistant";
   content: string;
   tokenCount: number;
+  metadata?: RetrievalMetadata | null;
   createdAt: Date;
 }
 
@@ -124,4 +125,5 @@ export interface WritebackJob {
   assistantResponse: string;
   userTokens: number;
   assistantTokens: number;
+  metadata?: RetrievalMetadata; // Analytics metadata from hot path
 }

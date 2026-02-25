@@ -47,6 +47,7 @@ export async function storeTurnPair(
   turnNumber: number,
   userMessage: string,
   assistantResponse: string,
+  metadata?: import("../types").RetrievalMetadata,
 ): Promise<{ userTurn: StoredTurn; assistantTurn: StoredTurn }> {
   const userTokens = countTokens(userMessage);
   const assistantTokens = countTokens(assistantResponse);
@@ -85,14 +86,21 @@ export async function storeTurnPair(
         role: "assistant",
         content: assistantResponse,
         tokenCount: assistantTokens,
+        metadata: metadata ? (metadata as unknown as object) : null,
       },
-      update: {},
+      update: {
+        // Update metadata if it wasn't set before
+        metadata: metadata ? (metadata as unknown as object) : undefined,
+      },
     }),
   ]);
 
   return {
     userTurn: userTurn as unknown as StoredTurn,
-    assistantTurn: assistantTurn as unknown as StoredTurn,
+    assistantTurn: {
+      ...(assistantTurn as unknown as StoredTurn),
+      metadata: assistantTurn.metadata as import("../types").RetrievalMetadata | null,
+    },
   };
 }
 

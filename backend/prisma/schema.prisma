@@ -28,6 +28,7 @@ model Turn {
   role           String
   content        String   @db.Text
   tokenCount     Int      @map("token_count")
+  metadata       Json?    // Lethus analytics metadata (stored on assistant turns)
   createdAt      DateTime @default(now()) @map("created_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
