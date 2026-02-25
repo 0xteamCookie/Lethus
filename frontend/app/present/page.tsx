@@ -9,6 +9,7 @@ import {
   OurSolutionSlide,
   IntentSlide,
   ZNormSlide,
+  KadaneSlide,
 } from "@/component/present";
 
 const slides = [
@@ -20,6 +21,7 @@ const slides = [
   { tag: "OUR SOLUTION", title: "Live State Tracking in Action", hook: "Watch how Lethus builds a structured state document from a 20-turn conversation, in real time." },
   { tag: "INTENT", title: "Smart Intent Classification", hook: "Different messages need different retrieval strategies. Lethus classifies intent first, then fetches only what is needed." },
   { tag: "Z-NORMALIZATION", title: "Scoring and Filtering with Z-Normalization", hook: "Cosine similarity scores are Z-normalized so irrelevant chunks drop below zero and get discarded automatically." },
+  { tag: "KADANE'S", title: "Optimal Span Selection", hook: "Find the contiguous window with the highest signal and send only that to the LLM." },
 ];
 
 export default function Present() {
@@ -112,6 +114,7 @@ export default function Present() {
             {current === 5 && <OurSolutionSlide />}
             {current === 6 && <IntentSlide />}
             {current === 7 && <ZNormSlide />}
+            {current === 8 && <KadaneSlide />}
           </div>
         </main>
 
