@@ -86,7 +86,7 @@ export async function storeTurnPair(
         role: "assistant",
         content: assistantResponse,
         tokenCount: assistantTokens,
-        metadata: metadata ? (metadata as unknown as object) : null,
+        metadata: metadata ? (metadata as unknown as object) : undefined,
       },
       update: {
         // Update metadata if it wasn't set before
