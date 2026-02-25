@@ -10,8 +10,9 @@ import { config } from "../config";
 async function verifyPostgres(): Promise<boolean> {
   console.log("── PostgreSQL ───────────────────────────");
   try {
-    const result =
-      (await prisma.$queryRaw[{ version: string }]) > `SELECT version()`;
+    const result = await prisma.$queryRaw<{ version: string }[]>`
+      SELECT version()
+    `;
     console.log("  Connected:", result[0].version.slice(0, 55));
 
     const tables = await prisma.$queryRaw<{ tablename: string }[]>`

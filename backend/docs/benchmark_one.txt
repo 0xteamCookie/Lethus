@@ -1,0 +1,499 @@
+[shaun@shaun backend]$ npm run demo
+
+> backend@1.0.0 demo
+> tsx src/scripts/demo.ts
+
+
+════════════════════════════════════════════════════════════
+  LETHUS AI — Live Demo
+════════════════════════════════════════════════════════════
+
+  Conversation ID: 8460e396-6d0b-4dad-8702-3f732cd4524f
+  Total turns: 20
+  Watching: token reduction, intent, span selection
+
+════════════════════════════════════════════════════════════
+
+
+── Turn 1/20 ─────────────────────────
+  User: Hi! We're building a task management API for a small team. What tech stack do you recommend?
+
+  Assistant: For a task management API for a small team, I recommend the following tech stack:
+
+### 1. **Programming Language**
+   - **Node.js**: Great for buildin...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           0 / 0 (cold start)
+    Changelog events: 0
+    Hot path time:    10372ms
+
+── Turn 2/20 ─────────────────────────
+  User: Let's go with Node.js and Express. What database should we use?
+
+  Assistant: For a Node.js and Express application, I recommend using **PostgreSQL** as your database for the following reasons:
+
+### Why PostgreSQL?
+1. **Relation...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           483 / 483 (cold start)
+    Changelog events: 0
+    Hot path time:    7250ms
+
+── Turn 3/20 ─────────────────────────
+  User: PostgreSQL sounds good. Let's use it. What should our core data models be?
+
+  Assistant: For a task management API, you can design the following core data models using PostgreSQL:
+
+### 1. **User**
+Represents the team members who use the ap...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           719 / 719 (cold start)
+    Changelog events: 0
+    Hot path time:    11217ms
+
+── Turn 4/20 ─────────────────────────
+  User: Create a tasks table with: id, title, description, status, assigned_to, created_at, due_date
+
+  Assistant: Here’s how you can create a `tasks` table in PostgreSQL with the specified columns (`id`, `title`, `description`, `status`, `assigned_to`, `created_at...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           1309 / 1309 (cold start)
+    Changelog events: 0
+    Hot path time:    7661ms
+
+── Turn 5/20 ─────────────────────────
+  User: Now let's set up authentication. JWT or sessions?
+
+  Assistant: For your task management API, I recommend using **JWT (JSON Web Tokens)** for authentication. Here are the key reasons:
+
+### Advantages of JWT:
+1. **S...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           1726 / 1726 (cold start)
+    Changelog events: 0
+    Hot path time:    5731ms
+
+── Turn 6/20 ─────────────────────────
+  User: Go with JWT. How should we structure the auth middleware?
+
+  Assistant: Here’s how you can structure a JWT authentication middleware in your Node.js and Express application:
+
+### Step 1: Install Required Packages
+First, en...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           1993 / 1993 (cold start)
+    Changelog events: 0
+    Hot path time:    12804ms
+
+── Turn 7/20 ─────────────────────────
+  User: The team just told me they want to switch to SQLite since we're demoing locally and don't need concurrent writes
+
+  Assistant: Switching to SQLite is a great choice for local development and demos due to its simplicity and ease of setup. Here’s how to adjust your task manageme...
+
+  📊 Lethus Metadata:
+    Intent:           NEW_TOPIC
+    Tokens:           1317 / 2626 (50% saved)
+    Changelog events: 0
+    Hot path time:    19465ms
+
+  🧠 Conversation State Snapshot:
+    Turn count: 7
+    Active changelog entries: 10
+    Active entries:
+      [T1] CONTEXT: The tech stack recommended for a task management API includes Node.js or Python, Express.js or Flask/Django, PostgreSQL or MongoDB, JWT or OAuth for authentication, Heroku or Vercel for hosting, Swagger/OpenAPI for documentation, Jest or Pytest for testing, and Git for version control.
+      [T2] DECISION: We'll use Node.js and Express for the application.
+      [T2] DECISION: I recommend using PostgreSQL as the database due to its robust features and suitability for structured data with relationships.
+      [T3] DECISION: We'll use PostgreSQL for the task management API.
+      [T3] CONTEXT: Core data models for the task management API include User, Project, Task, Comment (optional), and Labels or Tags (optional).
+      [T4] DECISION: Create a tasks table with columns: id, title, description, status, assigned_to, created_at, and due_date.
+      [T4] CONTEXT: The tasks table includes a foreign key that references the users table for the assigned_to field.
+      [T5] DECISION: For the task management API, we will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+      [T6] DECISION: User has decided to go with JWT for authentication.
+      [T7] UPDATE: The team has decided to switch to SQLite for local development and demos as concurrent writes are not needed.
+
+    State Doc (v2):
+      ## Current State
+      We are building a task management API using Node.js, Express, and PostgreSQL.
+
+      ## Active Decisions
+      - We will use Node.js and Express for the application.
+      - We will use PostgreSQL as the database for its robust features and structured data capabilities.
+      - We will create a tasks table with columns: id, title, description, status, assigned_to, created_at, and due_date.
+      - We will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+
+      ## Open Issues
+      - None.
+
+      ## Technical Context
+      - Language: JavaScript (Node.js)
+      - Framework: Express.js
+      - Database: PostgreSQL
+      - Authentication: JWT
+      - Hosting: Heroku or Vercel
+      - API Documentation: Swagger/OpenAPI
+      - Testing: Jest
+
+      ## Recent Focus
+      We last worked on structuring the auth middleware for JWT authentication in the task management API.
+
+── Turn 8/20 ─────────────────────────
+  User: Okay, implement the user registration endpoint with bcrypt for password hashing
+
+  Assistant: To implement a user registration endpoint with password hashing using `bcrypt`, follow these steps:
+
+### Step 1: Install Bcrypt
+First, install the `bc...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           2717 / 3436 (21% saved)
+    Changelog events: 0
+    Hot path time:    17642ms
+
+── Turn 9/20 ─────────────────────────
+  User: There's a problem — the bcrypt hashing is blocking the event loop and slowing everything down
+
+  Assistant: If you're facing performance issues due to blocking calls with bcrypt, you can utilize `bcrypt` in its asynchronous form to avoid blocking the event l...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           2969 / 4278 (31% saved)
+    Changelog events: 0
+    Hot path time:    26821ms
+
+── Turn 10/20 ─────────────────────────
+  User: Let me know when you've fixed it
+
+  Assistant: To resolve the blocking issue with `bcrypt` during password hashing and avoid slowing down your Node.js application, follow these steps to implement `...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           3218 / 4944 (35% saved)
+    Changelog events: 0
+    Hot path time:    19823ms
+
+── Turn 11/20 ─────────────────────────
+  User: The fix worked! Now let's implement the tasks CRUD endpoints
+
+  Assistant: Great to hear that the fix worked! Now let's implement the CRUD (Create, Read, Update, Delete) endpoints for tasks using Node.js, Express, and SQLite....
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           3586 / 5579 (36% saved)
+    Changelog events: 0
+    Hot path time:    24868ms
+
+── Turn 12/20 ─────────────────────────
+  User: Add input validation with zod for the task creation endpoint
+
+  Assistant: To implement input validation using **Zod** for the task creation endpoint in your task management API, follow these steps:
+
+### Step 1: Install Zod
+
+...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           4054 / 6680 (39% saved)
+    Changelog events: 0
+    Hot path time:    20141ms
+
+── Turn 13/20 ─────────────────────────
+  User: Let's add pagination to the GET /tasks endpoint
+
+  Assistant: To add pagination to the `GET /tasks` endpoint in your task management API, you will need to modify the query to accept pagination parameters and adju...
+
+  📊 Lethus Metadata:
+    Intent:           NEW_TOPIC
+    Tokens:           2496 / 7440 (66% saved)
+    Changelog events: 0
+    Hot path time:    23759ms
+
+── Turn 14/20 ─────────────────────────
+  User: What database did we decide to use? I want to double-check before we write the migration
+
+  Assistant: We decided to use **SQLite** as the database for its simplicity in local development. This choice complements the task management API's requirements e...
+
+  📊 Lethus Metadata:
+    Intent:           RECALL
+    Tokens:           2801 / 8411 (67% saved)
+    Spans selected:   T2-T7, T11-T11
+    Changelog events: 29
+    Hot path time:    5544ms
+
+  🧠 Conversation State Snapshot:
+    Turn count: 14
+    Active changelog entries: 32
+    Active entries:
+      [T1] CONTEXT: The tech stack recommended for a task management API includes Node.js or Python, Express.js or Flask/Django, PostgreSQL or MongoDB, JWT or OAuth for authentication, Heroku or Vercel for hosting, Swagger/OpenAPI for documentation, Jest or Pytest for testing, and Git for version control.
+      [T2] DECISION: I recommend using PostgreSQL as the database due to its robust features and suitability for structured data with relationships.
+      [T3] DECISION: We'll use PostgreSQL for the task management API.
+      [T3] CONTEXT: Core data models for the task management API include User, Project, Task, Comment (optional), and Labels or Tags (optional).
+      [T4] DECISION: Create a tasks table with columns: id, title, description, status, assigned_to, created_at, and due_date.
+      [T4] CONTEXT: The tasks table includes a foreign key that references the users table for the assigned_to field.
+      [T5] DECISION: For the task management API, we will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+      [T6] DECISION: User has decided to go with JWT for authentication.
+      [T7] UPDATE: The team has decided to switch to SQLite for local development and demos as concurrent writes are not needed.
+      [T8] CONTEXT: A user model is defined in Sequelize with fields for username, email, and password_hash.
+      [T8] CONTEXT: The user registration route requires username, email, and password as input from the request body.
+      [T8] CONTEXT: Passwords are hashed using bcrypt before being stored in the database.
+      [T8] CONTEXT: The server will respond with the user data excluding the password_hash upon successful registration.
+      [T9] ISSUE: The bcrypt hashing is blocking the event loop and slowing everything down.
+      [T9] UPDATE: Users should utilize the asynchronous version of bcrypt to avoid blocking the event loop.
+      [T9] CONTEXT: Consider using bcryptjs as an alternative if performance issues persist.
+      [T10] UPDATE: Switch from `bcrypt` to `bcryptjs` to avoid blocking issues during password hashing in the Node.js application.
+      [T10] RESOLUTION: Using `bcryptjs` should fix the blocking issue and improve the performance of the user registration endpoint.
+      [T10] CONTEXT: To implement `bcryptjs`, the existing bcrypt package should be uninstalled, and the registration logic needs to be modified to use the synchronous method of bcryptjs for password hashing.
+      [T11] RESOLUTION: The fix worked.
+      [T11] DECISION: Implement the CRUD endpoints for tasks using Node.js, Express, and SQLite.
+      [T11] CONTEXT: The CRUD operations include Create, Read, Update, and Delete for task management.
+      [T11] UPDATE: The task routes have been integrated into the main app file.
+      [T12] DECISION: Implement input validation using Zod for the task creation endpoint.
+      [T12] UPDATE: Update the task creation endpoint to incorporate the validation schema using Zod.
+      [T12] CONTEXT: A Zod schema named taskSchema is created to validate task properties.
+      [T12] CONTEXT: The validation schema includes fields like title, description, status, assigned_to, and due_date with specific constraints.
+      [T12] CONTEXT: The task creation endpoint now returns validation errors if the input does not match the schema.
+      [T12] UPDATE: The update endpoint will also use the taskSchema partially for validating updates to existing tasks.
+      [T13] DECISION: Let's add pagination to the GET /tasks endpoint.
+      [T13] UPDATE: Added pagination to the GET /tasks endpoint by accepting page and limit query parameters.
+      [T13] CONTEXT: The GET /tasks endpoint will include totalTasks, totalPages, currentPage, and tasks in the response to support pagination.
+
+    State Doc (v4):
+      ## Current State
+      We are building a task management API using Node.js, Express, and SQLite.
+
+      ## Active Decisions
+      - We will use Node.js and Express for the application.
+      - We will use SQLite as the database for its simplicity in local development.
+      - We will create a tasks table with columns: id, title, description, status, assigned_to, created_at, and due_date.
+      - We will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+      - We will implement the user registration endpoint using bcryptjs for password hashing.
+      - Implement CRUD endpoints for tasks using Node.js, Express, and SQLite.
+
+      ## Open Issues
+      - The bcrypt hashing is blocking the event loop and slowing everything down. (Resolved by switching to bcryptjs)
+
+      ## Technical Context
+      - Language: JavaScript (Node.js)
+      - Framework: Express.js
+      - Database: SQLite
+      - Authentication: JWT
+      - Hosting: Heroku or Vercel
+      - API Documentation: Swagger/OpenAPI
+      - Testing: Jest
+      - Input Validation: Zod
+
+      ## Recent Focus
+      We last worked on implementing input validation for the task creation endpoint using Zod in the task management API.
+
+── Turn 15/20 ─────────────────────────
+  User: What was the performance issue we ran into and how did we fix it?
+
+  Assistant: The performance issue we encountered was related to **bcrypt** hashing, which was blocking the event loop and slowing down the application. We resolve...
+
+  📊 Lethus Metadata:
+    Intent:           RECALL
+    Tokens:           1759 / 8477 (79% saved)
+    Spans selected:   T7-T7, T9-T11, T13-T14
+    Changelog events: 32
+    Hot path time:    4101ms
+
+── Turn 16/20 ─────────────────────────
+  User: Remind me — did we choose JWT or sessions for auth?
+
+  Assistant: We chose **JWT (JSON Web Tokens)** for authentication in our task management API. This choice is primarily due to its scalability and flexibility, mak...
+
+  📊 Lethus Metadata:
+    Intent:           RECALL
+    Tokens:           1971 / 8553 (77% saved)
+    Spans selected:   T5-T6, T15-T15
+    Changelog events: 34
+    Hot path time:    5576ms
+
+── Turn 17/20 ─────────────────────────
+  User: Now let's add a search endpoint for tasks
+
+  Assistant: To add a search endpoint for tasks in your task management API, you'll need to implement a new route that captures a search query and filters tasks ba...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           1926 / 8606 (78% saved)
+    Changelog events: 0
+    Hot path time:    34486ms
+
+── Turn 18/20 ─────────────────────────
+  User: Add rate limiting to the auth endpoints
+
+  Assistant: To add rate limiting to the authentication endpoints (e.g., user registration and login) in your task management API, you can use the `express-rate-li...
+
+  📊 Lethus Metadata:
+    Intent:           CONTINUATION
+    Tokens:           2242 / 9682 (77% saved)
+    Changelog events: 0
+    Hot path time:    12124ms
+
+── Turn 19/20 ─────────────────────────
+  User: We're getting close to done. Can you summarize all the key architectural decisions we've made?
+
+  Assistant: Certainly! Here's a summary of the key architectural decisions we've made for your task management API:
+
+### Key Architectural Decisions
+
+1. **Framewo...
+
+  📊 Lethus Metadata:
+    Intent:           RECALL
+    Tokens:           1964 / 10309 (81% saved)
+    Spans selected:   T1-T3, T7-T7, T14-T16
+    Changelog events: 38
+    Hot path time:    11160ms
+
+  🧠 Conversation State Snapshot:
+    Turn count: 19
+    Active changelog entries: 42
+    Active entries:
+      [T1] CONTEXT: The tech stack recommended for a task management API includes Node.js or Python, Express.js or Flask/Django, PostgreSQL or MongoDB, JWT or OAuth for authentication, Heroku or Vercel for hosting, Swagger/OpenAPI for documentation, Jest or Pytest for testing, and Git for version control.
+      [T2] DECISION: I recommend using PostgreSQL as the database due to its robust features and suitability for structured data with relationships.
+      [T3] DECISION: We'll use PostgreSQL for the task management API.
+      [T3] CONTEXT: Core data models for the task management API include User, Project, Task, Comment (optional), and Labels or Tags (optional).
+      [T4] CONTEXT: The tasks table includes a foreign key that references the users table for the assigned_to field.
+      [T5] DECISION: For the task management API, we will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+      [T6] DECISION: User has decided to go with JWT for authentication.
+      [T7] UPDATE: The team has decided to switch to SQLite for local development and demos as concurrent writes are not needed.
+      [T8] CONTEXT: A user model is defined in Sequelize with fields for username, email, and password_hash.
+      [T8] CONTEXT: The user registration route requires username, email, and password as input from the request body.
+      [T8] CONTEXT: Passwords are hashed using bcrypt before being stored in the database.
+      [T8] CONTEXT: The server will respond with the user data excluding the password_hash upon successful registration.
+      [T9] ISSUE: The bcrypt hashing is blocking the event loop and slowing everything down.
+      [T9] UPDATE: Users should utilize the asynchronous version of bcrypt to avoid blocking the event loop.
+      [T9] CONTEXT: Consider using bcryptjs as an alternative if performance issues persist.
+      [T10] UPDATE: Switch from `bcrypt` to `bcryptjs` to avoid blocking issues during password hashing in the Node.js application.
+      [T10] RESOLUTION: Using `bcryptjs` should fix the blocking issue and improve the performance of the user registration endpoint.
+      [T10] CONTEXT: To implement `bcryptjs`, the existing bcrypt package should be uninstalled, and the registration logic needs to be modified to use the synchronous method of bcryptjs for password hashing.
+      [T11] RESOLUTION: The fix worked.
+      [T11] DECISION: Implement the CRUD endpoints for tasks using Node.js, Express, and SQLite.
+      [T11] CONTEXT: The CRUD operations include Create, Read, Update, and Delete for task management.
+      [T11] UPDATE: The task routes have been integrated into the main app file.
+      [T12] DECISION: Implement input validation using Zod for the task creation endpoint.
+      [T12] UPDATE: Update the task creation endpoint to incorporate the validation schema using Zod.
+      [T12] CONTEXT: A Zod schema named taskSchema is created to validate task properties.
+      [T12] CONTEXT: The validation schema includes fields like title, description, status, assigned_to, and due_date with specific constraints.
+      [T12] CONTEXT: The task creation endpoint now returns validation errors if the input does not match the schema.
+      [T12] UPDATE: The update endpoint will also use the taskSchema partially for validating updates to existing tasks.
+      [T13] UPDATE: Added pagination to the GET /tasks endpoint by accepting page and limit query parameters.
+      [T13] CONTEXT: The GET /tasks endpoint will include totalTasks, totalPages, currentPage, and tasks in the response to support pagination.
+      [T15] ISSUE: The performance issue we encountered was related to bcrypt hashing, which was blocking the event loop and slowing down the application.
+      [T15] RESOLUTION: We resolved the issue by switching to bcryptjs, a pure JavaScript implementation of bcrypt that does not block the event loop, improving performance in our API.
+      [T16] CONTEXT: JWT (JSON Web Tokens) was chosen for authentication in the task management API due to its scalability and flexibility, which are suitable for a RESTful API structure.
+      [T17] DECISION: To enhance the task management API, a GET search endpoint for tasks will be implemented, allowing users to filter tasks based on their title or description.
+      [T17] UPDATE: The existing tasks route will be modified to include a new GET endpoint that accepts search queries along with pagination parameters.
+      [T17] CONTEXT: The new search endpoint will utilize Sequelize's 'Op' to perform searches using the 'like' operator on task titles and descriptions.
+      [T17] CONTEXT: The search endpoint can be accessed via GET /api/tasks?search=<search_query>&page=<page_number>&limit=<limit_number>.
+      [T17] CONTEXT: The response for the search endpoint will include 'totalTasks', 'totalPages', 'currentPage', and an array of 'tasks' that match the search criteria.
+      [T18] DECISION: Add rate limiting to the authentication endpoints in the task management API.
+      [T18] CONTEXT: The rate limiting implementation is done using the 'express-rate-limit' middleware.
+      [T18] UPDATE: The rate limiting is configured to allow 5 requests per user every 15 minutes.
+      [T18] ISSUE: The purpose of implementing rate limiting is to prevent abuse and potential brute-force attacks on user registration and login endpoints.
+
+    State Doc (v6):
+      ## Current State
+      We are building a task management API using Node.js, Express, and SQLite.
+
+      ## Active Decisions
+      - We will use Node.js and Express for the application.
+      - We will use SQLite as the database for its simplicity in local development.
+      - We will create a tasks table with columns: id, title, description, status, assigned_to, created_at, and due_date.
+      - We will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+      - We will implement the user registration endpoint using bcryptjs for password hashing.
+      - Implement CRUD endpoints for tasks using Node.js, Express, and SQLite.
+      - Let's add pagination to the GET /tasks endpoint.
+      - We will add a GET search endpoint for tasks, allowing filtering based on title or description.
+      - We will add rate limiting to the authentication endpoints in the task management API.
+
+      ## Open Issues
+      - The purpose of implementing rate limiting is to prevent abuse and potential brute-force attacks on user registration and login endpoints.
+
+      ## Technical Context
+      - Language: JavaScript (Node.js)
+      - Framework: Express.js
+      - Database: SQLite
+      - Authentication: JWT
+      - Hosting: Heroku or Vercel
+      - API Documentation: Swagger/OpenAPI
+      - Testing: Jest
+      - Input Validation: Zod
+      - Rate Limiting Middleware: express-rate-limit
+
+      ## Recent Focus
+      We last worked on adding rate limiting to the authentication endpoints in the task management API.
+
+── Turn 20/20 ─────────────────────────
+  User: What open issues are still unresolved in our project?
+
+  Assistant: Currently, the only open issue in your project is:
+
+- **Purpose of Rate Limiting**: We need to clearly define and understand the purpose of implementi...
+
+  📊 Lethus Metadata:
+    Intent:           RECALL
+    Tokens:           2155 / 10793 (80% saved)
+    Spans selected:   T3-T3, T10-T11, T14-T19
+    Changelog events: 42
+    Hot path time:    4652ms
+
+════════════════════════════════════════════════════════════
+  Demo Complete — Final State
+════════════════════════════════════════════════════════════
+
+  Total turns: 20
+  Active changelog entries: 54
+  State doc version: 6
+
+  Final State Document:
+  ----------------------------------------
+  ## Current State
+  We are building a task management API using Node.js, Express, and SQLite.
+
+  ## Active Decisions
+  - We will use Node.js and Express for the application.
+  - We will use SQLite as the database for its simplicity in local development.
+  - We will create a tasks table with columns: id, title, description, status, assigned_to, created_at, and due_date.
+  - We will use JWT (JSON Web Tokens) for authentication due to its scalability and flexibility.
+  - We will implement the user registration endpoint using bcryptjs for password hashing.
+  - Implement CRUD endpoints for tasks using Node.js, Express, and SQLite.
+  - Let's add pagination to the GET /tasks endpoint.
+  - We will add a GET search endpoint for tasks, allowing filtering based on title or description.
+  - We will add rate limiting to the authentication endpoints in the task management API.
+
+  ## Open Issues
+  - The purpose of implementing rate limiting is to prevent abuse and potential brute-force attacks on user registration and login endpoints.
+
+  ## Technical Context
+  - Language: JavaScript (Node.js)
+  - Framework: Express.js
+  - Database: SQLite
+  - Authentication: JWT
+  - Hosting: Heroku or Vercel
+  - API Documentation: Swagger/OpenAPI
+  - Testing: Jest
+  - Input Validation: Zod
+  - Rate Limiting Middleware: express-rate-limit
+
+  ## Recent Focus
+  We last worked on adding rate limiting to the authentication endpoints in the task management API.
+  ----------------------------------------
+
+  ✅ Demo complete. The conversation above used significantly fewer tokens than a naive full-context approach.
+
+[shaun@shaun backend]$
