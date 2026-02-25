@@ -27,7 +27,6 @@ async function verifyPostgres(): Promise<boolean> {
       "conversations",
       "turns",
       "changelog_entries",
-      "state_docs",
     ];
     const missing = required.filter((t) => !tableNames.includes(t));
 

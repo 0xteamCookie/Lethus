@@ -27,7 +27,6 @@ import { embed } from "../services/llm";
 import { milvus, COLLECTION_NAME } from "../db/milvus";
 import { classifyIntent } from "../services/intent";
 import { getActiveChangelog } from "../services/changelog";
-import { getStateDoc } from "../services/statedoc";
 import {
   getAllTurns,
   getRecentTurns,
@@ -43,7 +42,6 @@ import type {
   Intent,
   RetrievalResult,
   StoredTurn,
-  ChatMessage,
 } from "../types";
 
 // ── Main Assembly Function ────────────────────────────────────
@@ -274,50 +272,4 @@ export async function assembleContext(
       processingMs,
     },
   };
-}
-
-// ── Build Final Messages Array ────────────────────────────────
-// Converts retrieval result + state doc into the messages array
-// that gets sent to the upstream LLM.
-//
-// Structure:
-//   [system prompt with state doc injected]
-//   [retrieved historical turns]
-//   [current user message]
-
-export async function buildFinalMessages(
-  conversationId: string,
-  currentMessage: string,
-  originalSystemPrompt: string | undefined,
-  retrieval: RetrievalResult,
-): Promise<ChatMessage[]> {
-  // Get state doc to prepend
-  const stateDoc = await getStateDoc(conversationId);
-
-  // Build system prompt with state doc injected
-  let systemContent = originalSystemPrompt ?? "You are a helpful assistant.";
-
-  if (stateDoc) {
-    systemContent +=
-      "\n\n---\n## Conversation State\n" +
-      stateDoc.content +
-      "\n---\n\n" +
-      "The above represents the current state of this conversation. " +
-      "Use it as ground truth for any questions about prior decisions or context.";
-  }
-
-  const messages: ChatMessage[] = [{ role: "system", content: systemContent }];
-
-  // Add retrieved turns in chronological order
-  for (const turn of retrieval.selectedTurns) {
-    messages.push({
-      role: turn.role as "user" | "assistant",
-      content: turn.content,
-    });
-  }
-
-  // Add current user message
-  messages.push({ role: "user", content: currentMessage });
-
-  return messages;
 }

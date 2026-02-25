@@ -15,7 +15,6 @@ model Conversation {
 
   turns            Turn[]
   changelogEntries ChangelogEntry[]
-  stateDoc         StateDoc?
 
   @@index([browserId])
   @@map("conversations")
@@ -52,18 +51,4 @@ model ChangelogEntry {
   @@index([conversationId, category])
   @@index([conversationId, supersededBy])
   @@map("changelog_entries")
-}
-
-model StateDoc {
-  id                String   @id @default(uuid())
-  conversationId    String   @unique @map("conversation_id")
-  content           String   @db.Text
-  version           Int      @default(1)
-  lastUpdatedAtTurn Int      @default(0) @map("last_updated_at_turn")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@map("state_docs")
 }

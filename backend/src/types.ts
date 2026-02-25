@@ -45,18 +45,6 @@ export interface StoredChangelogEntry {
   createdAt: Date;
 }
 
-// ── State Document ───────────────────────────────────────────
-// The living summary of current conversation state.
-export interface StoredStateDoc {
-  id: string;
-  conversationId: string;
-  content: string;
-  version: number;
-  lastUpdatedAtTurn: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // ── Intent ───────────────────────────────────────────────────
 // What kind of query is the user making?
 // This determines retrieval strategy in the hot path.
@@ -106,7 +94,7 @@ export interface RetrievalMetadata {
 // Must be a valid OpenAI chat completions request body.
 export interface ProxyRequest {
   model: string;
-  messages: ChatMessage[];
+  messages: OpenAIMessage[];
   max_tokens?: number;
   temperature?: number;
   stream?: boolean;
@@ -124,4 +112,29 @@ export interface WritebackJob {
   assistantResponse: string;
   userTokens: number;
   assistantTokens: number;
+}
+// ── Full OpenAI Message Format ───────────────────────────
+// Supports the complete OpenAI chat completions message schema
+// including tool calls, content part arrays, and all role types.
+// Required for compatibility with agentic tools (Copilot, Cursor, etc.)
+// that send structured prompts far more complex than simple chat.
+
+export interface OpenAIContentPart {
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string; detail?: string };
+}
+
+export interface OpenAIToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+
+export interface OpenAIMessage {
+  role: "system" | "user" | "assistant" | "tool" | "developer" | "function";
+  content: string | OpenAIContentPart[] | null;
+  name?: string;
+  tool_calls?: OpenAIToolCall[];
+  tool_call_id?: string;
 }

@@ -45,14 +45,13 @@ app.get("/health", async (_req, res) => {
 app.get("/conversations/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const [conversation, turns, changelog, stateDoc] = await Promise.all([
+    const [conversation, turns, changelog] = await Promise.all([
       prisma.conversation.findUnique({ where: { id } }),
       prisma.turn.count({ where: { conversationId: id } }),
       prisma.changelogEntry.findMany({
         where: { conversationId: id, supersededBy: null },
         orderBy: { turnNumber: "asc" },
       }),
-      prisma.stateDoc.findUnique({ where: { conversationId: id } }),
     ]);
 
     if (!conversation) {
@@ -64,8 +63,6 @@ app.get("/conversations/:id", async (req, res) => {
       id: conversation.id,
       turnCount: Math.floor(turns / 2),
       activeChangelogEntries: changelog,
-      stateDoc: stateDoc?.content ?? null,
-      stateDocVersion: stateDoc?.version ?? 0,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch conversation" });
@@ -156,24 +153,6 @@ app.get("/conversations/:id/changelog", async (req, res) => {
     res.json(entries);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch changelog" });
-  }
-});
-
-// ── Conversation State Doc ────────────────────────────────────
-app.get("/conversations/:id/state", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const stateDoc = await prisma.stateDoc.findUnique({
-      where: { conversationId: id },
-    });
-
-    res.json({
-      content: stateDoc?.content ?? null,
-      version: stateDoc?.version ?? 0,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch state doc" });
   }
 });
 

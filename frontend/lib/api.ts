@@ -51,11 +51,6 @@ export interface ChangelogEntry {
   supersededBy: number | null;
 }
 
-export interface StateDoc {
-  content: string | null;
-  version: number;
-}
-
 export interface LethusMetadata {
   original_tokens: number;
   retrieved_tokens: number;
@@ -107,17 +102,6 @@ export async function getChangelog(
     { headers: headers() },
   );
   if (!res.ok) throw new Error("Failed to fetch changelog");
-  return res.json();
-}
-
-export async function getStateDoc(
-  conversationId: string,
-): Promise<StateDoc> {
-  const res = await fetch(
-    `${API_BASE}/conversations/${encodeURIComponent(conversationId)}/state`,
-    { headers: headers() },
-  );
-  if (!res.ok) throw new Error("Failed to fetch state doc");
   return res.json();
 }
 

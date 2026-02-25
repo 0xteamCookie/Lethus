@@ -49,7 +49,7 @@ async function withRetry<T>(
   throw lastError!;
 }
 
-// chat completion. used by: changelog, statedoc update and intent classification.
+// chat completion. used by: changelog and intent classification.
 // NOT used for the actual user-facing LLM call (tat goes direct to upstream).
 
 export async function chat(
@@ -193,6 +193,41 @@ export async function callUpstream(
   const outputTokens = data.usage?.completion_tokens ?? 0;
 
   return { content, inputTokens, outputTokens };
+}
+
+// upstream proxy (non-streaming, raw response)
+// forwards the request and returns the full upstream JSON response unchanged.
+// used by the agentic handler to preserve tool_calls, usage, etc.
+export async function callUpstreamRaw(
+  body: Record<string, unknown>,
+): Promise<{ json: Record<string, unknown>; content: string }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS * 4);
+
+  const response = await fetch(config.upstreamUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.upstreamKey}`,
+    },
+    body: JSON.stringify({ ...body, stream: false }),
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Upstream LLM error ${response.status}: ${errorBody}`);
+  }
+
+  const json = (await response.json()) as Record<string, unknown>;
+
+  // Extract text content for tracking (may be empty for tool-call-only responses)
+  const choices = (json.choices ?? []) as Array<{
+    message?: { content?: string | null };
+  }>;
+  const content = choices[0]?.message?.content ?? "";
+
+  return { json, content };
 }
 
 // upstream proxy (streaming)

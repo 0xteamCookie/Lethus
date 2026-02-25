@@ -2,15 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useConversation } from "@/lib/conversation";
-import StateLogSection from "@/component/ui/stateLog";
 import ChangeLogSection from "@/component/ui/changeLog";
 import AnalyticsSection from "@/component/ui/analytics";
 
-type Section = "state" | "changelog" | "analytics" | null;
+type Section = "changelog" | "analytics" | null;
 
 export default function RightPanel() {
     const [collapsed, setCollapsed] = useState(false);
-    const [activeSection, setActiveSection] = useState<Section>("state");
+    const [activeSection, setActiveSection] = useState<Section>("changelog");
     const [width, setWidth] = useState(296);
     const isDragging = useRef(false);
     const startX = useRef(0);
@@ -88,7 +87,6 @@ export default function RightPanel() {
                     className="w-1 h-full cursor-col-resize shrink-0 hover:bg-brand-purple/10 active:bg-brand-purple/20 transition-colors duration-150"
                 />
                 <div className="flex-1 flex flex-col h-full gap-2.5 p-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <StateLogSection open={activeSection === "state"} onToggle={() => handleToggle("state")} conversationId={currentId} />
                     <ChangeLogSection open={activeSection === "changelog"} onToggle={() => handleToggle("changelog")} conversationId={currentId} />
                     <AnalyticsSection open={activeSection === "analytics"} onToggle={() => handleToggle("analytics")} />
                 </div>

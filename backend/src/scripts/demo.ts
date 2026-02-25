@@ -123,8 +123,6 @@ async function getConversationState(conversationId: string) {
       category: string;
       content: string;
     }>;
-    stateDoc: string | null;
-    stateDocVersion: number;
   }>;
 }
 
@@ -206,12 +204,6 @@ async function runDemo() {
             console.log(`      [T${e.turnNumber}] ${e.category}: ${e.content}`);
           });
         }
-        if (state.stateDoc) {
-          console.log(`\n    State Doc (v${state.stateDocVersion}):`);
-          state.stateDoc.split("\n").forEach((line) => {
-            console.log(`      ${line}`);
-          });
-        }
       }
     } catch (error) {
       console.error(`\n  ❌ Turn ${turnNumber} failed:`, error);
@@ -234,16 +226,6 @@ async function runDemo() {
   console.log(
     `  Active changelog entries: ${finalState.activeChangelogEntries.length}`,
   );
-  console.log(`  State doc version: ${finalState.stateDocVersion}`);
-
-  if (finalState.stateDoc) {
-    console.log("\n  Final State Document:");
-    console.log("  " + "-".repeat(40));
-    finalState.stateDoc.split("\n").forEach((line) => {
-      console.log(`  ${line}`);
-    });
-    console.log("  " + "-".repeat(40));
-  }
 
   console.log(
     "\n  ✅ Demo complete. The conversation above used significantly " +

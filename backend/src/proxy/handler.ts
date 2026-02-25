@@ -1,37 +1,35 @@
-// Request handler for the proxy endpoint.
+// Unified request handler for the proxy.
 //
-// Flow:
-//   1. Parse incoming OpenAI-format request
-//   2. Extract or generate conversation ID
-//   3. Get current turn number
-//   4. Run hot path (assemble context)
-//   5. Build final messages array
-//   6. Call upstream LLM
-//   7. Send response to user
-//   8. Fire writeback (async, non-blocking)
-//   9. Return (user's request is complete)
+// Works with any OpenAI-compatible client: simple frontends,
+// Copilot, Cursor, or any tool-calling agent.
 //
-// Conversation ID:
-//   Passed in X-Lethus-Conversation-Id header.
-//   If not provided, we generate a new UUID.
-//   The response includes this header so the client can
-//   use the same ID on the next request.
+// Conversation ID: opt-in via X-Lethus-Conversation-Id header.
+//   - Without it: proxy only — no DB, no history, no tracking.
+//   - With it: cross-session memory, history injection, writeback.
 //
-// Drop-in compatibility:
-//   The request and response format is identical to OpenAI's
-//   /v1/chat/completions. Your users can point their existing
-//   OpenAI client at Lethus by changing only the base URL.
+// Client detection:
+//   - No assistant messages → thin client (e.g. our frontend).
+//     Lethus fetches and injects history via the retrieval pipeline
+//     (embed → Milvus → z-score → changelog boost → Kadane).
+//   - Has assistant messages → thick client (e.g. Copilot/Cursor).
+//     Client manages its own history. Lethus adds state doc and
+//     reduces if over budget with Kadane-scored trimming.
+//
+// Full OpenAI format is always preserved: tool_calls, content
+// arrays, developer role, etc. are forwarded verbatim.
 
 import type { Request, Response } from "express";
-import { randomUUID } from "crypto";
-import {
-  assembleContext,
-  buildFinalMessages,
-} from "../algorithm/contextAssembler";
-import { callUpstream, callUpstreamStreaming } from "../services/llm";
+import { assembleContext } from "../algorithm/contextAssembler";
+import { callUpstreamStreaming, callUpstreamRaw } from "../services/llm";
 import { getTurnCount, ensureConversation } from "../services/turnStorage";
 import { scheduleWriteback } from "../services/writeback";
-import type { ProxyRequest, ChatMessage } from "../types";
+import { config } from "../config";
+import type { ProxyRequest, OpenAIMessage } from "../types";
+import {
+  extractTextContent,
+  countOpenAIMessagesTokens,
+  reduceMessages,
+} from "./classify";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -42,7 +40,7 @@ export async function handleChatCompletion(
   const startMs = Date.now();
 
   try {
-    // ── Parse Request ───────────────────────────────────────
+    // ── Validate ────────────────────────────────────────────
     const body = req.body as ProxyRequest;
 
     if (!body.messages || !Array.isArray(body.messages)) {
@@ -65,269 +63,285 @@ export async function handleChatCompletion(
       return;
     }
 
-    // ── Extract Conversation ID ─────────────────────────────
+    const messages = body.messages as OpenAIMessage[];
+
+    // ── Conversation (opt-in) ───────────────────────────────
     const rawConversationId = req.headers["x-lethus-conversation-id"] as
       | string
       | undefined;
-    const conversationId = rawConversationId ?? randomUUID();
+    const conversationId = rawConversationId ?? null;
 
-    if (!UUID_RE.test(conversationId)) {
+    if (conversationId && !UUID_RE.test(conversationId)) {
       res.status(400).json({
         error: {
-          message:
-            "X-Lethus-Conversation-Id must be a valid UUID",
+          message: "X-Lethus-Conversation-Id must be a valid UUID",
           type: "invalid_request_error",
         },
       });
       return;
     }
 
-    // ── Extract Browser ID ────────────────────────────
-    const browserId = (req.headers["x-lethus-browser-id"] as string) ?? null;
+    const hasConversation = conversationId !== null;
+    let currentTurnNumber = 0;
 
-    // Ensure the conversation record exists in PostgreSQL
-    await ensureConversation(conversationId, browserId);
-
-    // ── Extract Message Parts ───────────────────────────────
-    // Split the incoming messages into:
-    //   - system prompt (if any)
-    //   - current user message (last user message)
-    //   - prior history (everything in between)
-    //
-    // The client sends us: [system?, history..., user_message]
-    // We throw away their history and replace it with our retrieval.
-
-    const systemMessage = body.messages.find(
-      (m: ChatMessage) => m.role === "system",
-    );
-    const userMessages = body.messages.filter(
-      (m: ChatMessage) => m.role === "user",
-    );
-
-    if (userMessages.length === 0) {
-      res.status(400).json({
-        error: {
-          message: "At least one user message is required",
-          type: "invalid_request_error",
-        },
-      });
-      return;
+    if (hasConversation) {
+      const browserId = (req.headers["x-lethus-browser-id"] as string) ?? null;
+      await ensureConversation(conversationId, browserId);
+      currentTurnNumber = (await getTurnCount(conversationId)) + 1;
     }
 
-    // The current message is always the last user message
-    const currentMessage = userMessages.at(-1)!.content;
-
-    // ── Get Turn Number ─────────────────────────────────────
-    const currentTurnNumber = (await getTurnCount(conversationId)) + 1;
-
-    // ── Hot Path: Assemble Context ──────────────────────────
-    const retrieval = await assembleContext(
-      conversationId,
-      currentMessage,
-      systemMessage?.content,
-    );
+    // ── Extract User Text ───────────────────────────────────
+    const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+    const currentUserText = lastUserMsg ? extractTextContent(lastUserMsg) : "";
 
     // ── Build Final Messages ────────────────────────────────
-    const finalMessages = await buildFinalMessages(
-      conversationId,
-      currentMessage,
-      systemMessage?.content,
-      retrieval,
-    );
+    // Thin client (no assistant messages + conv ID): inject retrieved history.
+    // Thick client (has assistant messages): passthrough + reduce if needed.
+    const hasClientHistory = messages.some(m => m.role === "assistant");
 
-    // ── Call Upstream LLM ───────────────────────────────────
-    // Strip the messages from the original body and add our
-    // assembled messages. Pass all other params through (temperature, etc.)
+    let finalMessages: OpenAIMessage[];
+    let reductionPercent = 0;
+    let intent: string | undefined;
+
+    if (hasConversation && !hasClientHistory && currentUserText) {
+      // ── Thin Client: Retrieval + Injection ────────────────
+      const retrieval = await assembleContext(
+        conversationId,
+        currentUserText,
+      );
+
+      // Collect system/developer messages from the client
+      const clientSystemMsgs = messages.filter(
+        m => m.role === "system" || m.role === "developer",
+      );
+
+      const systemContent = clientSystemMsgs.length > 0
+        ? clientSystemMsgs.map(m => extractTextContent(m)).join("\n\n")
+        : "You are a helpful assistant.";
+
+      finalMessages = [{ role: "system", content: systemContent }];
+
+      for (const turn of retrieval.selectedTurns) {
+        finalMessages.push({
+          role: turn.role as "user" | "assistant",
+          content: turn.content,
+        });
+      }
+
+      finalMessages.push({ role: "user", content: currentUserText });
+
+      reductionPercent = retrieval.metadata.reductionPercent;
+      intent = retrieval.metadata.intent;
+    } else {
+      // ── Thick Client / No Conversation: Passthrough ───────
+      const incomingTokens = countOpenAIMessagesTokens(messages);
+
+      if (incomingTokens <= config.agenticTokenThreshold) {
+        finalMessages = [...messages];
+      } else {
+        // Over budget — reduce with Kadane-scored trimming
+        finalMessages = reduceMessages(
+          messages,
+          config.agenticTokenThreshold,
+          config.agenticTailPreserve,
+          currentUserText,
+        );
+        const reducedTokens = countOpenAIMessagesTokens(finalMessages);
+        reductionPercent = Math.round(
+          (1 - reducedTokens / incomingTokens) * 100,
+        );
+
+        console.log(
+          `[lethus] Reduced ${incomingTokens} → ${reducedTokens} tokens ` +
+            `(${reductionPercent}% reduction)` +
+            (hasConversation ? ` conv=${conversationId}` : ""),
+        );
+      }
+    }
+
+    // ── Forward to Upstream ─────────────────────────────────
     const { messages: _ignored, ...restBody } = body;
     void _ignored;
 
-    // If the client requested streaming, proxy the upstream SSE stream.
+    const upstreamCtx: UpstreamContext = {
+      conversationId,
+      hasConversation,
+      currentTurnNumber,
+      currentUserText,
+      reductionPercent,
+      intent,
+      startMs,
+    };
+
     if (restBody.stream) {
-      // ── Streaming Mode ────────────────────────────────────
-      const processingMs = Date.now() - startMs;
-
-      // Set headers before starting the stream
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("X-Accel-Buffering", "no");
-
-      res.setHeader("X-Lethus-Conversation-Id", conversationId);
-      res.setHeader(
-        "X-Lethus-Reduction-Percent",
-        retrieval.metadata.reductionPercent.toString(),
-      );
-      res.setHeader("X-Lethus-Intent", retrieval.metadata.intent);
-      res.setHeader("X-Lethus-Processing-Ms", processingMs.toString());
-
-      const upstreamResponse = await callUpstreamStreaming({
-        ...restBody,
-        messages: finalMessages,
-      });
-
-      if (!upstreamResponse.body) {
-        res.status(500).json({
-          error: {
-            message: "Upstream response body is missing",
-            type: "internal_error",
-          },
-        });
-        return;
-      }
-
-      const reader = upstreamResponse.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-
-      let buffer = "";
-      let assistantContent = "";
-
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
-
-          // Split into SSE events separated by double newlines
-          let idx: number;
-          while ((idx = buffer.indexOf("\n\n")) !== -1) {
-            const rawEvent = buffer.slice(0, idx).trim();
-            buffer = buffer.slice(idx + 2);
-
-            if (!rawEvent) {
-              continue;
-            }
-
-            // Forward the event as-is
-            res.write(rawEvent + "\n\n");
-
-            // Extract assistant content from OpenAI-style SSE
-            const lines = rawEvent
-              .split("\n")
-              .map((l) => l.trim())
-              .filter(Boolean);
-
-            for (const line of lines) {
-              if (!line.startsWith("data:")) continue;
-              const dataStr = line.slice(5).trim();
-
-              if (dataStr === "[DONE]") {
-                break;
-              }
-
-              try {
-                const payload = JSON.parse(dataStr) as {
-                  choices?: Array<{
-                    delta?: { content?: string | null };
-                  }>;
-                };
-
-                const delta =
-                  payload.choices?.[0]?.delta?.content ?? undefined;
-                if (delta) {
-                  assistantContent += delta;
-                }
-              } catch {
-                // ignore JSON parse errors on non-JSON data lines
-              }
-            }
-          }
-        }
-
-        // Ensure any remaining buffered data is flushed
-        if (buffer.length > 0) {
-          res.write(buffer);
-        }
-
-        res.end();
-      } finally {
-        // Fire writeback with whatever content we accumulated.
-        // We don't have reliable token counts in streaming mode, so pass 0s.
-        scheduleWriteback({
-          conversationId,
-          turnNumber: currentTurnNumber,
-          userMessage: currentMessage,
-          assistantResponse: assistantContent,
-          userTokens: 0,
-          assistantTokens: 0,
-        });
-      }
+      await handleStreaming(res, restBody, finalMessages, upstreamCtx);
     } else {
-      // ── Non-streaming Mode (existing behaviour) ────────────
-      const { content, inputTokens, outputTokens } = await callUpstream({
-        ...restBody,
-        messages: finalMessages,
-      });
-
-      const processingMs = Date.now() - startMs;
-
-      // ── Send Response ─────────────────────────────────────
-      // Response is OpenAI-compatible so existing clients work unchanged.
-      // We add Lethus metadata in the response headers.
-      res.setHeader("X-Lethus-Conversation-Id", conversationId);
-      res.setHeader(
-        "X-Lethus-Reduction-Percent",
-        retrieval.metadata.reductionPercent.toString(),
-      );
-      res.setHeader("X-Lethus-Intent", retrieval.metadata.intent);
-      res.setHeader("X-Lethus-Processing-Ms", processingMs.toString());
-
-      // OpenAI-format response body
-      res.json({
-        id: `chatcmpl-lethus-${randomUUID()}`,
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: body.model,
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: "assistant",
-              content,
-            },
-            finish_reason: "stop",
-          },
-        ],
-        usage: {
-          prompt_tokens: inputTokens,
-          completion_tokens: outputTokens,
-          total_tokens: inputTokens + outputTokens,
-          // Lethus metadata in usage object
-          lethus_metadata: {
-            original_tokens: retrieval.metadata.originalTokenCount,
-            retrieved_tokens: retrieval.metadata.retrievedTokenCount,
-            reduction_percent: retrieval.metadata.reductionPercent,
-            intent: retrieval.metadata.intent,
-            spans_selected: retrieval.metadata.spansSelected,
-            changelog_entries_used: retrieval.metadata.changelogEntriesUsed,
-            processing_ms: processingMs,
-          },
-        },
-      });
-
-      // ── Fire Cold Path ────────────────────────────────────
-      // This runs AFTER the response is sent.
-      // The user is not waiting for this.
-      scheduleWriteback({
-        conversationId,
-        turnNumber: currentTurnNumber,
-        userMessage: currentMessage,
-        assistantResponse: content,
-        userTokens: inputTokens,
-        assistantTokens: outputTokens,
-      });
+      await handleNonStreaming(res, restBody, finalMessages, upstreamCtx);
     }
   } catch (error) {
     console.error("Proxy handler error:", error);
-
-    // Return an OpenAI-compatible error format
     res.status(500).json({
       error: {
         message:
           error instanceof Error ? error.message : "Internal server error",
         type: "internal_error",
       },
+    });
+  }
+}
+
+// ── Upstream Forwarding ─────────────────────────────────────
+
+interface UpstreamContext {
+  conversationId: string | null;
+  hasConversation: boolean;
+  currentTurnNumber: number;
+  currentUserText: string;
+  reductionPercent: number;
+  intent?: string;
+  startMs: number;
+}
+
+async function handleStreaming(
+  res: Response,
+  restBody: Record<string, unknown>,
+  finalMessages: OpenAIMessage[],
+  ctx: UpstreamContext,
+): Promise<void> {
+  const processingMs = Date.now() - ctx.startMs;
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  if (ctx.hasConversation) {
+    res.setHeader("X-Lethus-Conversation-Id", ctx.conversationId!);
+  }
+  res.setHeader(
+    "X-Lethus-Reduction-Percent",
+    ctx.reductionPercent.toString(),
+  );
+  if (ctx.intent) res.setHeader("X-Lethus-Intent", ctx.intent);
+  res.setHeader("X-Lethus-Processing-Ms", processingMs.toString());
+
+  const upstreamResponse = await callUpstreamStreaming({
+    ...restBody,
+    messages: finalMessages,
+  });
+
+  if (!upstreamResponse.body) {
+    res.status(500).json({
+      error: {
+        message: "Upstream response body is missing",
+        type: "internal_error",
+      },
+    });
+    return;
+  }
+
+  const reader = upstreamResponse.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let assistantContent = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+
+      let idx: number;
+      while ((idx = buffer.indexOf("\n\n")) !== -1) {
+        const rawEvent = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 2);
+
+        if (!rawEvent) continue;
+
+        res.write(rawEvent + "\n\n");
+
+        const lines = rawEvent
+          .split("\n")
+          .map(l => l.trim())
+          .filter(Boolean);
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5).trim();
+          if (dataStr === "[DONE]") break;
+          try {
+            const payload = JSON.parse(dataStr) as {
+              choices?: Array<{
+                delta?: { content?: string | null };
+              }>;
+            };
+            const delta = payload.choices?.[0]?.delta?.content;
+            if (delta) assistantContent += delta;
+          } catch {
+            // ignore non-JSON data lines
+          }
+        }
+      }
+    }
+
+    if (buffer.length > 0) res.write(buffer);
+    res.end();
+  } finally {
+    if (
+      ctx.hasConversation &&
+      assistantContent.trim().length > 10 &&
+      ctx.currentUserText
+    ) {
+      scheduleWriteback({
+        conversationId: ctx.conversationId!,
+        turnNumber: ctx.currentTurnNumber,
+        userMessage: ctx.currentUserText,
+        assistantResponse: assistantContent,
+        userTokens: 0,
+        assistantTokens: 0,
+      });
+    }
+  }
+}
+
+async function handleNonStreaming(
+  res: Response,
+  restBody: Record<string, unknown>,
+  finalMessages: OpenAIMessage[],
+  ctx: UpstreamContext,
+): Promise<void> {
+  const { json: upstreamResult, content } = await callUpstreamRaw({
+    ...restBody,
+    messages: finalMessages,
+  });
+
+  if (ctx.hasConversation) {
+    res.setHeader("X-Lethus-Conversation-Id", ctx.conversationId!);
+  }
+  res.setHeader(
+    "X-Lethus-Reduction-Percent",
+    ctx.reductionPercent.toString(),
+  );
+  if (ctx.intent) res.setHeader("X-Lethus-Intent", ctx.intent);
+  res.setHeader(
+    "X-Lethus-Processing-Ms",
+    (Date.now() - ctx.startMs).toString(),
+  );
+
+  res.json(upstreamResult);
+
+  if (
+    ctx.hasConversation &&
+    content.trim().length > 10 &&
+    ctx.currentUserText
+  ) {
+    scheduleWriteback({
+      conversationId: ctx.conversationId!,
+      turnNumber: ctx.currentTurnNumber,
+      userMessage: ctx.currentUserText,
+      assistantResponse: content,
+      userTokens: 0,
+      assistantTokens: 0,
     });
   }
 }

@@ -8,7 +8,6 @@
 //   2. Store turns in PostgreSQL (needed by later steps)
 //   3. Store embeddings in Milvus (for future retrieval)
 //   4. Extract + save changelog entries (needs turn text)
-//   5. Update state doc if interval reached (needs changelog)
 //
 // Each step has independent error handling.
 // A failure in step 3 should not prevent step 4 from running.
@@ -17,15 +16,12 @@
 //   Caller does: scheduleWriteback(job)  — returns immediately
 //   This function runs in the background, catches errors.
 
-import { config } from "../config";
 import {
   ensureConversation,
   storeTurnPair,
   storeTurnEmbedding,
-  getTurnCount,
 } from "./turnStorage";
 import { saveChangelogEntries } from "./changelog";
-import { upsertStateDoc } from "./statedoc";
 import type { WritebackJob } from "../types";
 
 // ── Core Writeback Logic ──────────────────────────────────────
@@ -90,22 +86,8 @@ async function runWriteback(job: WritebackJob): Promise<void> {
     // Non-fatal: less structured memory, but still works
   });
 
-  // Wait for both to complete before possibly updating state doc
-  // (state doc update needs the latest changelog)
+  // Wait for both to complete
   await Promise.all([embeddingPromise, changelogPromise]);
-
-  // Step 5: Update state doc if we've hit the interval
-  const totalTurns = await getTurnCount(conversationId);
-  const shouldUpdateStateDoc = totalTurns % config.stateDocUpdateInterval === 0;
-
-  if (shouldUpdateStateDoc) {
-    try {
-      await upsertStateDoc(conversationId, turnNumber);
-    } catch (error) {
-      console.error("[Writeback] Failed to update state doc:", error);
-      // Non-fatal: stale state doc is better than no state doc
-    }
-  }
 
   const elapsed = Date.now() - startMs;
   console.log(
