@@ -2,27 +2,46 @@
 
 **Drop-in LLM context proxy that slashes token costs by sending only what matters.**
 
-Lethus sits between your app and any LLM. Instead of replaying the entire conversation every turn, it classifies user intent, retrieves the most relevant history via vector search, and assembles a minimal context window, cutting token usage by up to 4×.
+> Built for **HackSRM 7.0** by [teamCookie()](https://github.com/0xteamCookie)
+
+Every LLM API call replays the entire conversation history. At turn 40, you're paying for 39 turns of context the model doesn't need. Lethus sits between your app and any LLM, classifies user intent, retrieves only the relevant history via vector search, and assembles a minimal context window -- cutting token usage by up to **4x**.
 
 ---
 
 ## How It Works
 
-```
-User Message → Intent Classifier → Retrieval Strategy
-                                         │
-            ┌────────────────────────────┘
-            ▼
-   Milvus Vector Search → Z-Score Normalize → Changelog Boost
-            │
-            ▼
-   Kadane's Optimal Span → Token Budget → LLM (upstream)
-            │
-            ▼
-   Response → Fire Cold Path (async)
-              ├── Store turns
-              ├── Update changelog
-              └── Refresh state doc (every N turns)
+```mermaid
+flowchart TD
+    A["User Message"] --> B["Intent Classifier"]
+    B --> C{"Retrieval Strategy"}
+
+    C -->|RECALL| D["Milvus Vector Search"]
+    C -->|CONTINUATION| D
+    C -->|CLARIFICATION| E["Last Assistant Turn"]
+    C -->|NEW_TOPIC| F["State Doc Only"]
+
+    D --> G["Z-Score Normalize"]
+    G --> H["Changelog Boost"]
+    H --> I["Kadane's Optimal Span"]
+    I --> J["Token Budget"]
+    E --> J
+    F --> J
+
+    J --> K["Upstream LLM"]
+    K --> L["Response to User"]
+
+    L -.->|async| M["Cold Path"]
+    M --> N["Store Turns"]
+    M --> O["Update Changelog"]
+    M --> P["Refresh State Doc"]
+
+    style A fill:#4f46e5,color:#fff
+    style K fill:#059669,color:#fff
+    style L fill:#059669,color:#fff
+    style M fill:#d97706,color:#fff
+    style N fill:#d97706,color:#fff
+    style O fill:#d97706,color:#fff
+    style P fill:#d97706,color:#fff
 ```
 
 ### Hot Path (per-request, blocks response)
@@ -48,18 +67,26 @@ User Message → Intent Classifier → Retrieval Strategy
 
 ## Architecture
 
-```
-┌──────────────┐     ┌──────────────────────────────┐     ┌─────────────┐
-│   Frontend   │────▸│       Lethus Backend         │────▸│ Upstream LLM│
-│  (Next.js)   │◂────│  Express · POST /v1/chat/... │◂────│ (any provider)│
-└──────────────┘     └──────────┬───────────────────┘     └─────────────┘
-                                │
-                    ┌───────────┼───────────┐
-                    ▼           ▼           ▼
-              ┌──────────┐ ┌────────┐ ┌──────────┐
-              │PostgreSQL│ │ Milvus │ │Embeddings│
-              │  (Prisma)│ │(vectors│ │  (any)   │
-              └──────────┘ └────────┘ └──────────┘
+```mermaid
+flowchart LR
+    FE["Frontend<br/>Next.js"] <-->|HTTP| BE["Lethus Backend<br/>Express"]
+    BE <-->|HTTP| LLM["Upstream LLM<br/>(any provider)"]
+
+    BE <--> PG[("PostgreSQL<br/>Prisma ORM")]
+    BE <--> MV[("Milvus<br/>Vector DB")]
+    BE -->|embed| EMB["Embedding API<br/>(any OpenAI-compatible)"]
+
+    MV --- ETCD["etcd"]
+    MV --- MINIO["MinIO"]
+
+    style FE fill:#3b82f6,color:#fff
+    style BE fill:#4f46e5,color:#fff
+    style LLM fill:#059669,color:#fff
+    style PG fill:#f59e0b,color:#000
+    style MV fill:#f59e0b,color:#000
+    style EMB fill:#8b5cf6,color:#fff
+    style ETCD fill:#6b7280,color:#fff
+    style MINIO fill:#6b7280,color:#fff
 ```
 
 ---
@@ -92,7 +119,7 @@ User Message → Intent Classifier → Retrieval Strategy
 ## Project Structure
 
 ```
-lethus-hacksrm/
+Lethus/
 ├── backend/
 │   ├── src/
 │   │   ├── algorithm/         # Core retrieval pipeline
@@ -199,7 +226,7 @@ npm run init:milvus
 ### 5. Start the servers
 
 ```bash
-# Terminal 1 — Backend (port 3001)
+# Terminal 1 — Backend (port 8000)
 cd backend
 npm run dev
 
@@ -212,19 +239,19 @@ npm run dev
 
 - **Chat UI**: [http://localhost:3000/chat](http://localhost:3000/chat)
 - **Presentation**: [http://localhost:3000/present](http://localhost:3000/present)
-- **Health check**: [http://localhost:3001/health](http://localhost:3001/health)
+- **Health check**: [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
 
 ## API — Drop-in LLM Proxy
 
-Lethus exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Point any client at `http://localhost:3001`:
+Lethus exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Point any client at `http://localhost:8000`:
 
 ```python
 import openai
 
 client = openai.OpenAI(
-    base_url="http://localhost:3001/v1",
+    base_url="http://localhost:8000/v1",
     api_key="your-key",
     default_headers={
         "X-Lethus-Conversation-Id": "your-uuid",  # optional
@@ -267,17 +294,107 @@ All tuning parameters are set via environment variables (see `.env.example`):
 
 ## Data Model
 
-```
-Conversation 1───* Turn
-     │
-     ├──1───* ChangelogEntry
-     │
-     └──1───1 StateDoc
+```mermaid
+erDiagram
+    Conversation ||--o{ Turn : "has many"
+    Conversation ||--o{ ChangelogEntry : "has many"
+    Conversation ||--o| StateDoc : "has one"
+
+    Conversation {
+        uuid id PK
+        string browserId
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Turn {
+        uuid id PK
+        uuid conversationId FK
+        int turnNumber
+        string role
+        text content
+        int tokenCount
+    }
+
+    ChangelogEntry {
+        uuid id PK
+        uuid conversationId FK
+        int turnNumber
+        string category
+        text content
+        int supersededBy
+    }
+
+    StateDoc {
+        uuid id PK
+        uuid conversationId FK
+        text content
+        int version
+        int lastUpdatedAtTurn
+    }
 ```
 
-- **Turn** — individual user/assistant messages with token counts
-- **ChangelogEntry** — categorized log of decisions, updates, issues, and resolutions (supersedable)
-- **StateDoc** — living structured summary, regenerated periodically via LLM
+- **Turn** -- individual user/assistant messages with token counts
+- **ChangelogEntry** -- categorized log of decisions, updates, issues, and resolutions (supersedable)
+- **StateDoc** -- living structured summary, regenerated periodically via LLM
+
+---
+
+## Request Lifecycle
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as Frontend
+    participant BE as Lethus Backend
+    participant PG as PostgreSQL
+    participant MV as Milvus
+    participant LLM as Upstream LLM
+
+    User->>FE: Send message
+    FE->>BE: POST /v1/chat/completions
+
+    rect rgb(239, 246, 255)
+        Note over BE: Hot Path
+        BE->>BE: Classify intent (gpt-4o-mini)
+        BE->>MV: Vector search (embed + query)
+        MV-->>BE: Similar turns + scores
+        BE->>BE: Z-Score normalize
+        BE->>BE: Changelog boost
+        BE->>BE: Kadane's optimal span
+        BE->>BE: Token budget trim
+    end
+
+    BE->>LLM: Assembled context + user message
+    LLM-->>BE: Response
+    BE-->>FE: Response + X-Lethus headers
+    FE-->>User: Display response
+
+    rect rgb(255, 247, 237)
+        Note over BE: Cold Path (async)
+        BE->>PG: Store user + assistant turns
+        BE->>MV: Embed and index new turns
+        BE->>BE: Generate changelog entries
+        BE->>PG: Store changelog
+        opt Every N turns
+            BE->>BE: Regenerate state doc
+            BE->>PG: Upsert state doc
+        end
+    end
+```
+
+---
+
+## Demo
+
+> Screenshots and demo video coming soon.
+
+<!--
+Add your demo content here:
+- Screen recording / GIF of the chat UI
+- Before vs after token usage comparison
+- Screenshot of the observability panel
+-->
 
 ---
 
@@ -298,4 +415,4 @@ npm run demo             # Run a demo conversation
 
 ## License
 
-[MIT](LICENSE) © teamCookie()
+[MIT](LICENSE) -- teamCookie()

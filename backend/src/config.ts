@@ -44,7 +44,7 @@ export const config = {
   upstreamKey: requireEnv("UPSTREAM_LLM_KEY"),
 
   // Server
-  port: numericEnv("PORT", 3001),
+  port: numericEnv("PORT", 8000),
 
   // CORS -- "*" allows all origins, otherwise comma-separated list
   corsOrigins: (() => {
