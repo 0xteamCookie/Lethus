@@ -81,13 +81,13 @@ function Section({ heading, items, highlight, warn }: { heading: string; items: 
 
     return (
         <div>
-            <span className={`inline-block text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border mb-1 ${headingColor}`}>
+            <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border mb-1 ${headingColor}`}>
                 {heading}
             </span>
             {items.map((item, i) => (
                 <div key={i} className="flex items-start gap-1.5 pl-2 py-px">
                     <span className="text-gray-300 mt-1 text-[8px]">•</span>
-                    <span className="text-gray-600 text-[11px] leading-relaxed">{item}</span>
+                    <span className="text-gray-600 text-[13px] leading-relaxed">{item}</span>
                 </div>
             ))}
         </div>
@@ -202,12 +202,12 @@ const OurSolutionSlide = () => {
                                     animation: i === visibleTurn - 1 ? "fadeSlideIn 0.3s ease-out" : undefined,
                                 }}
                             >
-                                <span className="text-[10px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">
+                                <span className="text-[11px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">
                                     {turn.id}
                                 </span>
                                 <div className="flex items-start gap-1.5">
-                                    <span className="text-[11px] font-semibold text-indigo-500 shrink-0">User:</span>
-                                    <span className="text-[12px] text-gray-600 leading-snug">
+                                    <span className="text-[13px] font-semibold text-indigo-500 shrink-0">User:</span>
+                                    <span className="text-[14px] text-gray-600 leading-snug">
                                         {turn.text}
                                     </span>
                                 </div>

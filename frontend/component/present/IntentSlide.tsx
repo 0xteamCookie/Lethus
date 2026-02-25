@@ -75,8 +75,8 @@ function ContextBar({ intent }: { intent: Intent | null }) {
                     <div
                         key={block.label}
                         className={`px-2 py-1 rounded text-[10px] font-semibold border transition-all duration-300 ${active
-                                ? "bg-gray-900 border-gray-900 text-white"
-                                : "bg-white border-gray-200 text-gray-300"
+                            ? "bg-gray-900 border-gray-900 text-white"
+                            : "bg-white border-gray-200 text-gray-300"
                             }`}
                     >
                         {block.label}
@@ -207,11 +207,11 @@ const IntentSlide = () => {
                                 className={`flex gap-2 items-start ${msg.role === "assistant" ? "" : ""}`}
                                 style={{ animation: i === visibleCount - 1 ? "fadeSlideIn 0.25s ease-out" : undefined }}
                             >
-                                <span className={`text-[10px] font-semibold shrink-0 w-12 pt-0.5 ${msg.role === "user" ? "text-indigo-500" : "text-gray-400"
+                                <span className={`text-[12px] font-semibold shrink-0 w-12 pt-0.5 ${msg.role === "user" ? "text-indigo-500" : "text-gray-400"
                                     }`}>
                                     {msg.role === "user" ? "User" : "LLM"}
                                 </span>
-                                <span className={`text-[12px] leading-relaxed ${msg.role === "user" ? "text-gray-800" : "text-gray-500"
+                                <span className={`text-[14px] leading-relaxed ${msg.role === "user" ? "text-gray-800" : "text-gray-500"
                                     }`}>
                                     {msg.text}
                                 </span>
@@ -247,10 +247,10 @@ const IntentSlide = () => {
                                     <div
                                         key={intent}
                                         className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-all duration-300 ${isMatch
-                                                ? `${config.bg} ${config.border} ${config.color}`
-                                                : isPulsing
-                                                    ? "bg-gray-50 border-gray-200 text-gray-400 animate-pulse"
-                                                    : "bg-white border-gray-100 text-gray-300"
+                                            ? `${config.bg} ${config.border} ${config.color}`
+                                            : isPulsing
+                                                ? "bg-gray-50 border-gray-200 text-gray-400 animate-pulse"
+                                                : "bg-white border-gray-100 text-gray-300"
                                             }`}
                                     >
                                         {intent}

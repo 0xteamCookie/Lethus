@@ -42,11 +42,11 @@ function Msg({ i, isNew, dim, hl, strike, score }: {
         ${hl ? "bg-indigo-50 -mx-2 px-2 py-1 rounded-lg border border-indigo-100" : ""}`}
             style={{ animation: isNew ? "fadeSlideIn 0.3s ease-out" : undefined }}
         >
-            <span className="text-[10px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">{m.id}</span>
-            <span className={`text-[11px] font-semibold shrink-0 ${m.role === "user" ? "text-indigo-500" : "text-emerald-500"}`}>
+            <span className="text-[11px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">{m.id}</span>
+            <span className={`text-[13px] font-semibold shrink-0 ${m.role === "user" ? "text-indigo-500" : "text-emerald-500"}`}>
                 {m.role === "user" ? "User:" : "AI:"}
             </span>
-            <span className="text-[12px] text-gray-600 leading-snug flex-1">{m.text}</span>
+            <span className="text-[14px] text-gray-600 leading-snug flex-1">{m.text}</span>
             {score !== undefined && (
                 <span className={`text-[9px] font-mono shrink-0 px-1 py-0.5 rounded ${score >= 0.6 ? "bg-indigo-100 text-indigo-700 font-bold" : "bg-gray-50 text-gray-300"}`}>
                     {score.toFixed(2)}
@@ -212,14 +212,14 @@ const ProblemSlide = () => {
                         <div className="flex flex-col gap-1">
                             <Badge text={`Sending all ${step} messages every request`} warn={step > 6} />
                             {convo.slice(0, step).map((m, i) => (
-                                <div key={i} className={`text-[11px] leading-snug py-0.5 pl-2 border-l-2 transition-all duration-300 ${step >= 5 && obsolete.has(i)
+                                <div key={i} className={`text-[13px] leading-snug py-0.5 pl-2 border-l-2 transition-all duration-300 ${step >= 5 && obsolete.has(i)
                                     ? "border-red-300 text-gray-300 line-through"
                                     : "border-indigo-200 text-gray-600"
                                     }`}
                                     style={{ animation: i === step - 1 ? "fadeSlideIn 0.3s ease-out" : undefined }}>
-                                    <span className="font-mono text-gray-300 text-[9px] mr-1">{m.id}</span>
+                                    <span className="font-mono text-gray-300 text-[10px] mr-1">{m.id}</span>
                                     {m.text}
-                                    {step >= 5 && obsolete.has(i) && <span className="text-red-400 text-[9px] ml-1">OBSOLETE</span>}
+                                    {step >= 5 && obsolete.has(i) && <span className="text-red-400 text-[10px] ml-1">OBSOLETE</span>}
                                 </div>
                             ))}
                             {step >= 5 && (
