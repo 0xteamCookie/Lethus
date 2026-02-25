@@ -1,19 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-    --font-primary: 'Outfit', sans-serif;
+    --font-primary: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 
-    --color-brand-purple: #5C35E6;
-    --color-brand-purple-light: #EEF0FF;
+    --color-brand-purple: #4338CA;
+    --color-brand-purple-light: #EEF2FF;
+    --color-brand-purple-hover: #3730A3;
     --color-accent-orange: #F5A623;
     --color-accent-green: #3ECF8E;
     --color-warning-orange: #F97316;
     --color-dark-navy: #1A1F4B;
-    --color-page-bg: #F5F6FF;
+    --color-page-bg: #FAFBFF;
     --color-surface-white: #FFFFFF;
-    --color-border: #E8E9F0;
-    --color-text-primary: #1A1A2E;
+    --color-surface-elevated: #FFFFFF;
+    --color-border: #E5E7EB;
+    --color-border-subtle: #F0F1F5;
+    --color-text-primary: #111827;
     --color-text-secondary: #6B7280;
+    --color-text-tertiary: #9CA3AF;
     --color-badge-free: #8B5CF6;
     --color-badge-hot: #EF4444;
     --color-badge-new: #06B6D4;
@@ -30,6 +35,7 @@
         font-family: var(--font-primary);
         background-color: var(--color-page-bg);
         color: var(--color-text-primary);
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }

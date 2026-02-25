@@ -2,85 +2,84 @@
 
 import { useState } from "react";
 
-const pills = [
-    {
-        label: "AI Copilot",
-        icon: (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor" />
-            </svg>
-        ),
-    },
-    {
-        label: "Image Generation",
-        icon: (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" fill="currentColor" />
-            </svg>
-        ),
-    },
-    {
-        label: "Summary",
-        icon: (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill="currentColor" />
-            </svg>
-        ),
-    },
-    {
-        label: "More",
-        icon: (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor" />
-            </svg>
-        ),
-    },
+const suggestions = [
+    { label: "Write code", icon: "code" },
+    { label: "Analyze data", icon: "chart" },
+    { label: "Summarize", icon: "doc" },
+    { label: "Brainstorm", icon: "bulb" },
 ];
+
+const iconMap: Record<string, React.ReactNode> = {
+    code: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+        </svg>
+    ),
+    chart: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+    ),
+    doc: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+    ),
+    bulb: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18h6" />
+            <path d="M10 22h4" />
+            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+        </svg>
+    ),
+};
 
 export default function ChatInput() {
     const [query, setQuery] = useState("");
 
     return (
-        <div className="w-full max-w-[680px] bg-surface-white rounded-[20px] border border-border shadow-[0_4px_24px_rgba(92,53,230,0.06),0_1px_4px_rgba(0,0,0,0.04)] p-5 px-6 flex flex-col gap-4">
-            <div className="flex items-center gap-2.5 w-full">
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="shrink-0"
-                >
-                    <path
-                        d="M12 2L13.09 8.26L18 6L14.74 10.91L21 12L14.74 13.09L18 18L13.09 15.74L12 22L10.91 15.74L6 18L9.26 13.09L3 12L9.26 10.91L6 6L10.91 8.26L12 2Z"
-                        fill="var(--color-brand-purple)"
+        <div className="w-full max-w-[640px]">
+            <div className="bg-surface-white rounded-2xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.04),0_6px_24px_rgba(0,0,0,0.03)] p-4 flex flex-col gap-3 transition-shadow duration-300 focus-within:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_6px_24px_rgba(92,53,230,0.08)]">
+                <div className="flex items-center gap-3 w-full">
+                    <div className="w-7 h-7 rounded-lg bg-brand-purple-light flex items-center justify-center shrink-0">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L13.09 8.26L18 6L14.74 10.91L21 12L14.74 13.09L18 18L13.09 15.74L12 22L10.91 15.74L6 18L9.26 13.09L3 12L9.26 10.91L6 6L10.91 8.26L12 2Z" fill="var(--color-brand-purple)" />
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Ask anything..."
+                        className="flex-1 border-none outline-none font-primary text-[14px] font-normal text-text-primary bg-transparent placeholder:text-text-tertiary"
                     />
-                </svg>
-                <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Initiate a query or send a command to the AI..."
-                    className="flex-1 border-none outline-none font-primary text-[15px] font-normal text-text-primary bg-transparent placeholder:text-text-secondary"
-                />
-                <button
-                    className="w-9 h-9 rounded-[10px] bg-brand-purple border-none cursor-pointer flex items-center justify-center shrink-0 transition-all duration-150 hover:scale-105 hover:shadow-[0_2px_12px_rgba(92,53,230,0.3)]"
-                    aria-label="Send message"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="white" />
-                    </svg>
-                </button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-                {pills.map(({ label, icon }) => (
                     <button
-                        key={label}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[10px] bg-brand-purple-light text-text-primary font-primary text-[13px] font-medium border-none cursor-pointer whitespace-nowrap transition-all duration-150 hover:bg-[#dde0ff] hover:-translate-y-px"
+                        className="w-8 h-8 rounded-lg bg-brand-purple border-none cursor-pointer flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-brand-purple-hover"
+                        aria-label="Send message"
                     >
-                        {icon}
-                        {label}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                     </button>
-                ))}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                    {suggestions.map(({ label, icon }) => (
+                        <button
+                            key={label}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-page-bg text-text-secondary font-primary text-[12px] font-medium border border-border-subtle cursor-pointer whitespace-nowrap transition-all duration-150 hover:bg-brand-purple-light hover:text-brand-purple hover:border-brand-purple/15"
+                        >
+                            {iconMap[icon]}
+                            {label}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
