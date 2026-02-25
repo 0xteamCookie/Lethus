@@ -4,44 +4,42 @@
 
 > Built for **HackSRM 7.0** by [teamCookie()](https://github.com/0xteamCookie)
 
-Every LLM API call replays the entire conversation history. At turn 40, you're paying for 39 turns of context the model doesn't need. Lethus sits between your app and any LLM, classifies user intent, retrieves only the relevant history via vector search, and assembles a minimal context window -- cutting token usage by up to **4x**.
+| | Without Lethus | With Lethus |
+|--|--|--|
+| Input tokens/month | 640M | **~430M** |
+| Monthly input cost | $3,200 | **$2,150** |
+| **Monthly savings** | | **~$1,050** |
+| **Annual savings** | | **~$12,600** |
+
+> *Example: 800M tokens/month, 80/20 input-output split, $5/M input pricing. ~30-35% input reduction (Model: Claude Opus 4.6)*
+
+Every LLM API call replays the entire conversation. At turn 40, you're paying for 39 turns the model doesn't need. Lethus classifies intent, retrieves only what matters via vector search, and assembles a minimal context window -- cutting input tokens by up to **4x**.
 
 ---
 
 ## How It Works
 
 ```mermaid
-flowchart TD
-    A["User Message"] --> B["Intent Classifier"]
-    B --> C{"Retrieval Strategy"}
+flowchart LR
+    subgraph hot ["Hot Path"]
+        A["Message"] --> B["Intent"]
+        B --> C["Retrieve"]
+        C --> D["Z-Score"]
+        D --> E["Boost"]
+        E --> F["Kadane"]
+        F --> G["Budget"]
+    end
 
-    C -->|RECALL| D["Milvus Vector Search"]
-    C -->|CONTINUATION| D
-    C -->|CLARIFICATION| E["Last Assistant Turn"]
-    C -->|NEW_TOPIC| F["State Doc Only"]
+    G --> H["LLM"]
+    H --> I["Response"]
 
-    D --> G["Z-Score Normalize"]
-    G --> H["Changelog Boost"]
-    H --> I["Kadane's Optimal Span"]
-    I --> J["Token Budget"]
-    E --> J
-    F --> J
-
-    J --> K["Upstream LLM"]
-    K --> L["Response to User"]
-
-    L -.->|async| M["Cold Path"]
-    M --> N["Store Turns"]
-    M --> O["Update Changelog"]
-    M --> P["Refresh State Doc"]
+    I -.->|async| J["Cold Path"]
 
     style A fill:#4f46e5,color:#fff
-    style K fill:#059669,color:#fff
-    style L fill:#059669,color:#fff
-    style M fill:#d97706,color:#fff
-    style N fill:#d97706,color:#fff
-    style O fill:#d97706,color:#fff
-    style P fill:#d97706,color:#fff
+    style H fill:#059669,color:#fff
+    style I fill:#059669,color:#fff
+    style J fill:#d97706,color:#fff
+    style hot fill:#eff6ff,stroke:#3b82f6
 ```
 
 ### Hot Path (per-request, blocks response)
