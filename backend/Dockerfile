@@ -20,11 +20,19 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 
+# Prisma client (generated to src/generated/prisma, compiled to dist/generated)
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY prisma.config.ts ./
+
+# Prisma 7.x needs tsx/ts-node to load prisma.config.ts at runtime (migrate deploy)
+RUN npm i tsx
+
+# Generate the Prisma client in production so query engine binaries match this OS
+RUN npx prisma generate
+
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
