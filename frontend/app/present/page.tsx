@@ -6,8 +6,17 @@ import {
   StepsSlide,
   ComparisonSlide,
   ImpactSlide,
-  slides,
+  OurSolutionSlide,
 } from "@/component/present";
+
+const slides = [
+  { tag: "THE PROBLEM", title: "Stop Paying LLMs to Remember the Same Thing", hook: "Have you ever watched your OpenAI bill grow because your app keeps resending the same context?" },
+  { tag: "CORE IDEA", title: "Lethus Memory Layer", hook: "Send the Present + the Most Meaningful Story" },
+  { tag: "ALGORITHM", title: "The Algorithmic Engine", hook: "Turning Context into an Optimization Problem" },
+  { tag: "DIFFERENTIATION", title: "Why This Is Different", hook: "Not RAG. Not Summarization. Not Prompt Compression." },
+  { tag: "IMPACT & VISION", title: "Pay for Signal, Not Tokens", hook: "" },
+  { tag: "OUR SOLUTION", title: "Live State Tracking in Action", hook: "Watch how Lethus builds a structured state document from a 20-turn conversation — in real time." },
+];
 
 export default function Present() {
   const [current, setCurrent] = useState(0);
@@ -91,11 +100,12 @@ export default function Present() {
               </p>
             )}
 
-            {slide.content.type === "problem" && <ProblemSlide content={slide.content} />}
-            {slide.content.type === "memory" && <MemorySlide content={slide.content} />}
-            {slide.content.type === "steps" && <StepsSlide content={slide.content} />}
-            {slide.content.type === "comparison" && <ComparisonSlide content={slide.content} />}
-            {slide.content.type === "impact" && <ImpactSlide content={slide.content} />}
+            {current === 0 && <ProblemSlide />}
+            {current === 1 && <MemorySlide />}
+            {current === 2 && <StepsSlide />}
+            {current === 3 && <ComparisonSlide />}
+            {current === 4 && <ImpactSlide />}
+            {current === 5 && <OurSolutionSlide />}
           </div>
         </main>
 
@@ -131,8 +141,8 @@ export default function Present() {
           onClick={prev}
           disabled={current === 0}
           className={`px-5 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 ${current === 0
-              ? "border-gray-100 text-gray-300 cursor-not-allowed"
-              : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 cursor-pointer"
+            ? "border-gray-100 text-gray-300 cursor-not-allowed"
+            : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 cursor-pointer"
             }`}
         >
           ← Previous
@@ -160,8 +170,8 @@ export default function Present() {
           onClick={next}
           disabled={current === slides.length - 1}
           className={`px-5 py-2.5 rounded-lg text-sm font-semibold border transition-all duration-200 ${current === slides.length - 1
-              ? "border-gray-100 text-gray-300 cursor-not-allowed"
-              : "bg-violet-600 border-violet-600 text-white hover:bg-violet-700 cursor-pointer shadow-sm"
+            ? "border-gray-100 text-gray-300 cursor-not-allowed"
+            : "bg-violet-600 border-violet-600 text-white hover:bg-violet-700 cursor-pointer shadow-sm"
             }`}
         >
           Next →

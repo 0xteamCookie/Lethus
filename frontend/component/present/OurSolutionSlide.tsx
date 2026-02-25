@@ -1,0 +1,253 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+
+const turns = [
+    { id: "T1", text: "let's build an e-commerce backend" },
+    { id: "T2", text: "use Node and Express" },
+    { id: "T3", text: "PostgreSQL for the database" },
+    { id: "T4", text: "add Stripe for payments" },
+    { id: "T5", text: "actually let's use MongoDB instead of PostgreSQL, our data is too flexible for relational" },
+    { id: "T6", text: "set up user authentication" },
+    { id: "T7", text: "JWT tokens for auth" },
+    { id: "T8", text: "add an orders collection to MongoDB" },
+    { id: "T9", text: "the orders endpoint is throwing a 500 error" },
+    { id: "T10", text: "okay fixed it, was a missing await" },
+    { id: "T11", text: "add product search functionality" },
+    { id: "T12", text: "search is too slow on large datasets" },
+    { id: "T13", text: "let's add an index on the product name field" },
+    { id: "T14", text: "actually Stripe has too many fees, switch to PayPal" },
+    { id: "T15", text: "PayPal sandbox is set up" },
+    { id: "T16", text: "add order status tracking" },
+    { id: "T17", text: "statuses should be: pending, processing, shipped, delivered" },
+    { id: "T18", text: "the search index helped but still slow on 100k products" },
+    { id: "T19", text: "should we add Redis for caching search results?" },
+    { id: "T20", text: "yes let's add Redis" },
+];
+
+interface StateDoc {
+    project: string;
+    stack: string[];
+    currentTask: string;
+    openQuestions: string[];
+    resolved: string[];
+}
+
+const stateSnapshots: Record<number, StateDoc> = {
+    1: { project: "E-commerce backend", stack: [], currentTask: "Setting up project", openQuestions: [], resolved: [] },
+    2: { project: "E-commerce backend", stack: ["Runtime: Node + Express"], currentTask: "Setting up runtime", openQuestions: [], resolved: [] },
+    3: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: PostgreSQL"], currentTask: "Setting up database", openQuestions: [], resolved: [] },
+    4: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: PostgreSQL", "Payments: Stripe"], currentTask: "Integrating payments", openQuestions: [], resolved: [] },
+    5: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Payments: Stripe"], currentTask: "Migrating to MongoDB", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
+    6: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Payments: Stripe"], currentTask: "Setting up user authentication", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
+    7: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Configuring JWT auth", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
+    8: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Adding orders collection", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
+    9: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Debugging orders endpoint", openQuestions: ["Orders 500 error cause unknown"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)"] },
+    10: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Orders endpoint working", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)"] },
+    11: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Adding product search", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)"] },
+    12: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Optimizing search performance", openQuestions: ["Search too slow on large datasets"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)"] },
+    13: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: Stripe"], currentTask: "Search optimization", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)"] },
+    14: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Switching to PayPal", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
+    15: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "PayPal configuration", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
+    16: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Adding order status tracking", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
+    17: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Implementing order statuses", openQuestions: [], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
+    18: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Search performance issue", openQuestions: ["Search still slow on 100k products despite index"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
+    19: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal"], currentTask: "Evaluating Redis for caching", openQuestions: ["Redis implementation details not decided yet"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)", "Switched Stripe → PayPal at T14 (too many fees)"] },
+    20: { project: "E-commerce backend", stack: ["Runtime: Node + Express", "DB: MongoDB", "Auth: JWT", "Payments: PayPal", "Cache: Redis (just added)"], currentTask: "Adding Redis for search caching", openQuestions: ["Redis implementation details not decided yet"], resolved: ["Switched PostgreSQL → MongoDB at T5 (flexible data)", "Switched Stripe → PayPal at T14 (too many fees)", "Fixed orders 500 error at T10 (missing await)", "Added product name index at T13 (search too slow)"] },
+};
+
+function StateDocView({ doc, flash }: { doc: StateDoc; flash: boolean }) {
+    return (
+        <div className={`flex flex-col gap-2 transition-all duration-300 ${flash ? "ring-2 ring-indigo-200 ring-offset-1" : ""}`}>
+            <Section heading="Project" items={[doc.project]} />
+            <Section heading="Stack" items={doc.stack} />
+            <Section heading="Current Task" items={[doc.currentTask]} highlight />
+            {doc.openQuestions.length > 0 && (
+                <Section heading="Open Questions" items={doc.openQuestions} warn />
+            )}
+            {doc.resolved.length > 0 && (
+                <Section heading="Resolved" items={doc.resolved} />
+            )}
+        </div>
+    );
+}
+
+function Section({ heading, items, highlight, warn }: { heading: string; items: string[]; highlight?: boolean; warn?: boolean }) {
+    const headingColor = highlight
+        ? "text-indigo-600 bg-indigo-50 border-indigo-100"
+        : warn
+            ? "text-amber-600 bg-amber-50 border-amber-100"
+            : "text-gray-500 bg-gray-50 border-gray-200";
+
+    return (
+        <div>
+            <span className={`inline-block text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border mb-1 ${headingColor}`}>
+                {heading}
+            </span>
+            {items.map((item, i) => (
+                <div key={i} className="flex items-start gap-1.5 pl-2 py-px">
+                    <span className="text-gray-300 mt-1 text-[8px]">•</span>
+                    <span className="text-gray-600 text-[11px] leading-relaxed">{item}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+const OurSolutionSlide = () => {
+    const [visibleTurn, setVisibleTurn] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [flash, setFlash] = useState(false);
+    const chatRef = useRef<HTMLDivElement>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const play = () => {
+        if (visibleTurn >= 20) {
+            setVisibleTurn(0);
+        }
+        setIsPlaying(true);
+    };
+
+    const pause = () => {
+        setIsPlaying(false);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+
+    const reset = () => {
+        pause();
+        setVisibleTurn(0);
+    };
+
+    useEffect(() => {
+        if (!isPlaying) return;
+
+        intervalRef.current = setInterval(() => {
+            setVisibleTurn((prev) => {
+                if (prev >= 20) {
+                    setIsPlaying(false);
+                    return 20;
+                }
+                return prev + 1;
+            });
+        }, 800);
+
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [isPlaying]);
+
+    useEffect(() => {
+        if (visibleTurn > 0) {
+            setFlash(true);
+            const t = setTimeout(() => setFlash(false), 400);
+            return () => clearTimeout(t);
+        }
+    }, [visibleTurn]);
+
+    useEffect(() => {
+        if (chatRef.current) {
+            chatRef.current.scrollTop = chatRef.current.scrollHeight;
+        }
+    }, [visibleTurn]);
+
+    const currentState = visibleTurn > 0 ? stateSnapshots[visibleTurn] : null;
+
+    return (
+        <div className="flex flex-col gap-4 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+                <button
+                    onClick={isPlaying ? pause : play}
+                    className="px-4 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all duration-200 bg-gray-900 border-gray-900 text-white hover:bg-gray-800"
+                >
+                    {isPlaying ? "⏸ Pause" : visibleTurn >= 20 ? "↻ Replay" : "▶ Play"}
+                </button>
+                <button
+                    onClick={reset}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50 transition-all duration-200"
+                >
+                    Reset
+                </button>
+                <div className="flex items-center gap-2 ml-auto">
+                    <div className="h-1.5 w-32 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                            style={{ width: `${(visibleTurn / 20) * 100}%` }}
+                        />
+                    </div>
+                    <span className="text-[11px] text-gray-400 font-mono tabular-nums">
+                        {visibleTurn}/20
+                    </span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+                <div className="flex flex-col rounded-xl border border-gray-200 overflow-hidden bg-white">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+                        <div className="flex gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
+                        </div>
+                        <span className="text-[11px] text-gray-400 font-medium ml-2">conversation.log</span>
+                    </div>
+                    <div
+                        ref={chatRef}
+                        className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5 max-h-[340px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
+                        {turns.slice(0, visibleTurn).map((turn, i) => (
+                            <div
+                                key={turn.id}
+                                className="flex items-start gap-2.5"
+                                style={{
+                                    animation: i === visibleTurn - 1 ? "fadeSlideIn 0.3s ease-out" : undefined,
+                                }}
+                            >
+                                <span className="text-[10px] font-mono font-bold text-gray-300 shrink-0 w-6 pt-0.5">
+                                    {turn.id}
+                                </span>
+                                <div className="flex items-start gap-1.5">
+                                    <span className="text-[11px] font-semibold text-indigo-500 shrink-0">User:</span>
+                                    <span className="text-[12px] text-gray-600 leading-snug">
+                                        {turn.text}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                        {visibleTurn === 0 && (
+                            <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">
+                                Press Play to start the demo
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex flex-col rounded-xl border border-gray-200 overflow-hidden bg-white">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+                        <div className="flex gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
+                        </div>
+                        <span className="text-[11px] text-gray-400 font-medium ml-2">state_log.md</span>
+                        {visibleTurn > 0 && (
+                            <span className="ml-auto text-[9px] font-medium text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                                LIVE
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-4 py-3 max-h-[340px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {currentState ? (
+                            <StateDocView doc={currentState} flash={flash} />
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-gray-300 text-sm h-full min-h-[200px]">
+                                Waiting for conversation...
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default OurSolutionSlide;

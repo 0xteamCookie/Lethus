@@ -5,4 +5,4 @@ export { default as MemorySlide } from "./MemorySlide";
 export { default as StepsSlide } from "./StepsSlide";
 export { default as ComparisonSlide } from "./ComparisonSlide";
 export { default as ImpactSlide } from "./ImpactSlide";
-export { slides } from "./slides";
+export { default as OurSolutionSlide } from "./OurSolutionSlide";
