@@ -12,6 +12,8 @@ Drop-in proxy &middot; OpenAI-compatible &middot; Up to 4x token reduction
 
 Built for **HackSRM 7.0** by [teamCookie()](https://github.com/0xteamCookie)
 
+[Live Demo](https://lethus.getmyroom.in) &middot; [Presentation](https://lethus.getmyroom.in/present)
+
 <br>
 
 </div>
