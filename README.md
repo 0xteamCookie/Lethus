@@ -10,9 +10,11 @@ Drop-in proxy &middot; OpenAI-compatible &middot; Up to 4x token reduction
 
 <br>
 
-Built for **HackSRM 7.0** by [teamCookie()](https://github.com/0xteamCookie)
+Built by [teamCookie()](https://github.com/0xteamCookie)
 
 [Live Demo](https://lethus.getmyroom.in) &middot; [Presentation](https://lethus.getmyroom.in/present)
+
+[![Video Demo](https://img.youtube.com/vi/FpiByIk7wnc/maxresdefault.jpg)](https://youtu.be/FpiByIk7wnc)
 
 <br>
 
@@ -368,6 +370,6 @@ npm run demo             # Run a demo conversation
 
 <div align="center">
 
-[MIT License](LICENSE) &middot; [teamCookie()](https://github.com/0xteamCookie) &middot; HackSRM 7.0
+[MIT License](LICENSE) &middot; [teamCookie()](https://github.com/0xteamCookie)
 
 </div>
