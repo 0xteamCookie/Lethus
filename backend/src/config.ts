@@ -36,12 +36,17 @@ export const config = {
   // Milvus
   milvusAddress: optionalEnv("MILVUS_ADDRESS", "localhost:19530"),
 
-  // OpenAI — used for text-embedding-3-small and cold path LLM calls
-  openaiKey: requireEnv("OPENAI_API_KEY"),
+  // Upstream — single OpenAI-compatible API (base URL, no trailing slash)
+  upstreamUrl: requireEnv("UPSTREAM_URL"),
+  upstreamKey: requireEnv("UPSTREAM_KEY"),
 
-  // Upstream LLM — where user-facing chat requests get forwarded
-  upstreamUrl: requireEnv("UPSTREAM_LLM_URL"),
-  upstreamKey: requireEnv("UPSTREAM_LLM_KEY"),
+  // Models
+  chatModel: optionalEnv("UPSTREAM_CHAT_MODEL", "gpt-4o-mini"),
+  embeddingModel: optionalEnv("UPSTREAM_EMBED_MODEL", "text-embedding-3-small"),
+
+  // Embedding dimension must match the Milvus collection.
+  // If you change the embed model, drop and recreate the collection.
+  embeddingDimension: numericEnv("EMBEDDING_DIMENSION", 1536),
 
   // Server
   port: numericEnv("PORT", 8000),
@@ -52,12 +57,6 @@ export const config = {
     if (raw === "*") return "*" as const;
     return raw.split(",").map((s) => s.trim());
   })(),
-
-  // Embedding — text-embedding-3-small produces 1536-dimensional vectors.
-  // This dimension must match the Milvus collection exactly.
-  // If you change the model, you must also drop and recreate the collection.
-  embeddingModel: optionalEnv("EMBEDDING_MODEL", "text-embedding-3-small"),
-  embeddingDimension: numericEnv("EMBEDDING_DIMENSION", 1536),
 
   // Milvus collection
   milvusCollection: optionalEnv("MILVUS_COLLECTION", "turn_embeddings"),

@@ -77,13 +77,14 @@ async function verifyMilvus(): Promise<boolean> {
 }
 
 async function verifyOpenAI(): Promise<boolean> {
-  console.log("── OpenAI API ───────────────────────────");
+  console.log("── Upstream API ─────────────────────────");
   try {
-    const response = await fetch("https://api.openai.com/v1/models", {
-      headers: { Authorization: `Bearer ${config.openaiKey}` },
+    const response = await fetch(`${config.upstreamUrl}/models`, {
+      headers: { Authorization: `Bearer ${config.upstreamKey}` },
     });
 
     if (response.ok) {
+      console.log(`  Chat model: ${config.chatModel}`);
       console.log(`  Embedding model: ${config.embeddingModel}`);
       console.log(`  Embedding dimension: ${config.embeddingDimension}`);
       console.log("  ✅ API key valid\n");
@@ -91,7 +92,7 @@ async function verifyOpenAI(): Promise<boolean> {
     } else {
       const body = (await response.json()) as { error?: { message: string } };
       console.log("  ❌ API error:", body.error?.message);
-      console.log("  Fix: check OPENAI_API_KEY in .env");
+      console.log("  Fix: check UPSTREAM_URL / UPSTREAM_KEY in .env");
       return false;
     }
   } catch (error) {

@@ -55,7 +55,7 @@ async function withRetry<T>(
 export async function chat(
   messages: ChatMessage[],
   {
-    model = "gpt-4o-mini",
+    model = config.chatModel,
     maxTokens = 512,
     jsonMode = false,
   }: {
@@ -80,11 +80,11 @@ export async function chat(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(`${config.upstreamUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${config.openaiKey}`,
+        Authorization: `Bearer ${config.upstreamKey}`,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -124,11 +124,11 @@ export async function embed(text: string): Promise<number[]> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
-    const response = await fetch("https://api.openai.com/v1/embeddings", {
+    const response = await fetch(`${config.upstreamUrl}/embeddings`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${config.openaiKey}`,
+        Authorization: `Bearer ${config.upstreamKey}`,
       },
       body: JSON.stringify({
         model: config.embeddingModel,
@@ -168,7 +168,7 @@ export async function callUpstream(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS * 4);
 
-  const response = await fetch(config.upstreamUrl, {
+  const response = await fetch(`${config.upstreamUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -204,7 +204,7 @@ export async function callUpstreamStreaming(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS * 4);
 
-  const response = await fetch(config.upstreamUrl, {
+  const response = await fetch(`${config.upstreamUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
