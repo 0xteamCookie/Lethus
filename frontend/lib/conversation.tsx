@@ -30,6 +30,7 @@ interface ConversationContextValue {
   messages: Message[];
   loading: boolean;
   sending: boolean;
+  panelVersion: number;
   refreshConversations: () => Promise<void>;
   loadConversation: (id: string) => Promise<void>;
   send: (text: string) => Promise<string>;
@@ -50,6 +51,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [panelVersion, setPanelVersion] = useState(0);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -68,6 +70,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
       setMessages(
         turns
           .filter((t: Turn) => t.role === "user" || t.role === "assistant")
+          .sort((a: Turn, b: Turn) => a.turnNumber - b.turnNumber)
           .map((t: Turn) => ({ 
             role: t.role as "user" | "assistant", 
             content: t.content,
@@ -119,7 +122,28 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
         if (!currentId && resolvedConversationId) {
           setCurrentId(resolvedConversationId);
         }
-        // Refresh sidebar
+
+        // Reload turns from backend to attach metadata (needed for analytics)
+        if (resolvedConversationId) {
+          try {
+            const turns = await getConversationTurns(resolvedConversationId);
+            setMessages(
+              turns
+                .filter((t: Turn) => t.role === "user" || t.role === "assistant")
+                .sort((a: Turn, b: Turn) => a.turnNumber - b.turnNumber)
+                .map((t: Turn) => ({
+                  role: t.role as "user" | "assistant",
+                  content: t.content,
+                  metadata: t.metadata || undefined,
+                })),
+            );
+          } catch {
+            // Keep streamed messages if reload fails
+          }
+        }
+
+        // Refresh sidebar and right panel
+        setPanelVersion((v) => v + 1);
         await refreshConversations();
         return resolvedConversationId;
       } catch (err) {
@@ -146,6 +170,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
         messages,
         loading,
         sending,
+        panelVersion,
         refreshConversations,
         loadConversation,
         send,

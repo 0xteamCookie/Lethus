@@ -15,7 +15,7 @@ export default function RightPanel() {
     const isDragging = useRef(false);
     const startX = useRef(0);
     const startWidth = useRef(0);
-    const { currentId } = useConversation();
+    const { currentId, panelVersion } = useConversation();
 
     const handleToggle = (section: Section) => {
         setActiveSection((prev) => (prev === section ? null : section));
@@ -88,8 +88,8 @@ export default function RightPanel() {
                     className="w-1 h-full cursor-col-resize shrink-0 hover:bg-brand-purple/10 active:bg-brand-purple/20 transition-colors duration-150"
                 />
                 <div className="flex-1 flex flex-col h-full gap-2.5 p-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <StateLogSection open={activeSection === "state"} onToggle={() => handleToggle("state")} conversationId={currentId} />
-                    <ChangeLogSection open={activeSection === "changelog"} onToggle={() => handleToggle("changelog")} conversationId={currentId} />
+                    <StateLogSection open={activeSection === "state"} onToggle={() => handleToggle("state")} conversationId={currentId} version={panelVersion} />
+                    <ChangeLogSection open={activeSection === "changelog"} onToggle={() => handleToggle("changelog")} conversationId={currentId} version={panelVersion} />
                     <AnalyticsSection open={activeSection === "analytics"} onToggle={() => handleToggle("analytics")} />
                 </div>
             </aside>

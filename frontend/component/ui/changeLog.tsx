@@ -19,9 +19,10 @@ interface Props {
     open: boolean;
     onToggle: () => void;
     conversationId: string | null;
+    version?: number;
 }
 
-export default function ChangeLogSection({ open, onToggle, conversationId }: Props) {
+export default function ChangeLogSection({ open, onToggle, conversationId, version }: Props) {
     const [entries, setEntries] = useState<ChangelogEntry[]>([]);
 
     useEffect(() => {
@@ -32,7 +33,7 @@ export default function ChangeLogSection({ open, onToggle, conversationId }: Pro
         getChangelog(conversationId)
             .then(setEntries)
             .catch(() => setEntries([]));
-    }, [conversationId]);
+    }, [conversationId, version]);
 
     return (
         <div className="rounded-xl border border-border overflow-hidden">

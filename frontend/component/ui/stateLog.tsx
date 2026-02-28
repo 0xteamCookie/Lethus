@@ -123,9 +123,10 @@ interface Props {
     open: boolean;
     onToggle: () => void;
     conversationId: string | null;
+    version?: number;
 }
 
-export default function StateLogSection({ open, onToggle, conversationId }: Props) {
+export default function StateLogSection({ open, onToggle, conversationId, version }: Props) {
     const [stateLog, setStateLog] = useState<StateSection[]>([]);
 
     useEffect(() => {
@@ -137,7 +138,7 @@ export default function StateLogSection({ open, onToggle, conversationId }: Prop
             if (doc.content) setStateLog(parseStateDoc(doc.content));
             else setStateLog([]);
         }).catch(() => setStateLog([]));
-    }, [conversationId]);
+    }, [conversationId, version]);
 
     return (
         <div className="rounded-xl border border-border overflow-hidden">
